@@ -3,6 +3,52 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Pasien_model extends CI_Model {
 
+    // ==========================================
+    // FUNGSI UNTUK PAGINATION, SEARCH & FILTER
+    // ==========================================
+    public function get_paginated($limit, $start, $keyword = null, $jenis_kelamin = null) {
+        $this->db->select('*');
+        $this->db->from('pasien');
+
+        // Filter Pencarian (Search by Nama atau No RM) - Case Insensitive
+        if (!empty($keyword)) {
+            $this->db->group_start();
+            $this->db->where("LOWER(nama_lengkap) LIKE LOWER('%".$this->db->escape_like_str($keyword)."%')", NULL, FALSE);
+            $this->db->or_where("LOWER(no_rekam_medis) LIKE LOWER('%".$this->db->escape_like_str($keyword)."%')", NULL, FALSE);
+            $this->db->group_end();
+        }
+
+        // Filter Jenis Kelamin
+        if (!empty($jenis_kelamin)) {
+            $this->db->where('jenis_kelamin', $jenis_kelamin);
+        }
+
+        $this->db->order_by('id_pasien', 'DESC'); // Tampilkan data terbaru di atas
+        $this->db->limit($limit, $start);
+        
+        return $this->db->get()->result();
+    }
+
+    public function count_all_results($keyword = null, $jenis_kelamin = null) {
+        $this->db->from('pasien');
+
+        if (!empty($keyword)) {
+            $this->db->group_start();
+            $this->db->where("LOWER(nama_lengkap) LIKE LOWER('%".$this->db->escape_like_str($keyword)."%')", NULL, FALSE);
+            $this->db->or_where("LOWER(no_rekam_medis) LIKE LOWER('%".$this->db->escape_like_str($keyword)."%')", NULL, FALSE);
+            $this->db->group_end();
+        }
+
+        if (!empty($jenis_kelamin)) {
+            $this->db->where('jenis_kelamin', $jenis_kelamin);
+        }
+
+        return $this->db->count_all_results();
+    }
+
+    // ==========================================
+    // FUNGSI CRUD STANDAR BAWAAN
+    // ==========================================
     public function get_all() {
         return $this->db->get('pasien')->result();
     }
@@ -17,26 +63,21 @@ class Pasien_model extends CI_Model {
         return $this->db->get('pasien')->row();
     }
 
-    // FUNGSI BARU: Insert User dan Pasien sekaligus dengan Transaction
     public function insert_with_user($data_user, $data_pasien) {
-        $this->db->trans_start(); // Mulai Transaksi
-
-        // 1. Simpan ke tabel Users
-        // Hash password menggunakan bcrypt bawaan PHP
+        $this->db->trans_start(); 
+        
         $data_user['password'] = password_hash($data_user['password'], PASSWORD_DEFAULT);
         $this->db->insert('users', $data_user);
-        $user_id = $this->db->insert_id(); // Ambil ID user yang baru dibuat
+        $user_id = $this->db->insert_id(); 
 
-        // 2. Simpan ke tabel Pasien
         if (!isset($data_pasien['no_rekam_medis'])) {
             $data_pasien['no_rekam_medis'] = $this->generate_no_rm();
         }
-        $data_pasien['id_user'] = $user_id; // Hubungkan dengan akun yang baru dibuat
+        $data_pasien['id_user'] = $user_id; 
         $this->db->insert('pasien', $data_pasien);
 
-        $this->db->trans_complete(); // Selesaikan Transaksi
-
-        return $this->db->trans_status(); // Mengembalikan TRUE jika berhasil, FALSE jika gagal
+        $this->db->trans_complete(); 
+        return $this->db->trans_status(); 
     }
 
     public function update($id, $data) {
@@ -45,25 +86,19 @@ class Pasien_model extends CI_Model {
     }
 
     public function delete($id) {
-        // Karena Foreign Key di DB menggunakan ON DELETE CASCADE (opsional di tabel user)
-        // Sebaiknya hapus dari user, maka pasien otomatis terhapus jika direlasikan.
-        // Namun di sini kita hapus pasiennya, atau hapus usernya juga.
-        
         $pasien = $this->get_by_id($id);
         if ($pasien) {
             $this->db->trans_start();
             $this->db->where('id_pasien', $id)->delete('pasien');
-            $this->db->where('id_user', $pasien->id_user)->delete('users'); // Hapus akunnya juga
+            $this->db->where('id_user', $pasien->id_user)->delete('users');
             $this->db->trans_complete();
             return $this->db->trans_status();
         }
         return false;
     }
 
-    // Logika Generate RM Otomatis
     private function generate_no_rm() {
-        $tahunBulan = date('Ym'); // Output: 202606
-        
+        $tahunBulan = date('Ym'); 
         $this->db->like('no_rekam_medis', 'RM-'.$tahunBulan, 'after');
         $this->db->order_by('id_pasien', 'DESC');
         $pasienTerakhir = $this->db->get('pasien')->row();

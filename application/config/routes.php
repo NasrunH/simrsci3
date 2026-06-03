@@ -19,10 +19,11 @@ $route['translate_uri_dashes'] = FALSE;
 // ==========================================
 // AUTHENTICATION ROUTES
 // ==========================================
-$route['login']          = 'auth/index';
-$route['login_process']  = 'auth/login_process';
-$route['logout']         = 'auth/logout';
-
+$route['login']            = 'auth/index';
+$route['login_process']    = 'auth/login_process';
+$route['logout']           = 'auth/logout';
+$route['register']         = 'auth/register';          // <--- Tambahkan Baris Ini
+$route['register_process'] = 'auth/register_process';  // <--- Tambahkan Baris Ini
 // ==========================================
 // DASHBOARD
 // ==========================================

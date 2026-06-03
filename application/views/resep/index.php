@@ -12,6 +12,37 @@
     <?php endif; ?>
 </div>
 
+<!-- ============================================== -->
+<!-- FORM PENCARIAN & FILTER                        -->
+<!-- ============================================== -->
+<div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6">
+    <form action="<?= base_url('resep') ?>" method="GET" class="flex flex-col md:flex-row gap-4 items-end">
+        <div class="w-full md:w-1/3">
+            <label class="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wider">Cari Pasien</label>
+            <input type="text" name="keyword" value="<?= htmlspecialchars($keyword ?? '') ?>" placeholder="Ketik Nama atau No RM..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary text-sm">
+        </div>
+        
+        <div class="w-full md:w-1/4">
+            <label class="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wider">Filter Tanggal</label>
+            <input type="date" name="tanggal" value="<?= htmlspecialchars($tanggal ?? '') ?>" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary text-sm">
+        </div>
+        
+        <div class="flex gap-2">
+            <button type="submit" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">
+                Terapkan
+            </button>
+            <?php if(!empty($keyword) || !empty($tanggal)): ?>
+                <a href="<?= base_url('resep') ?>" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-gray-300">
+                    Reset
+                </a>
+            <?php endif; ?>
+        </div>
+    </form>
+</div>
+
+<!-- ============================================== -->
+<!-- TABEL DATA RESEP                               -->
+<!-- ============================================== -->
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
     <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
@@ -29,7 +60,7 @@
             </thead>
             <tbody class="text-sm text-gray-700">
                 <?php if(!empty($resep)): ?>
-                    <?php $no = 1; foreach($resep as $r): ?>
+                    <?php $no = $start + 1; foreach($resep as $r): ?>
                     <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                         <td class="py-3 px-4 text-center text-gray-500"><?= $no++ ?></td>
                         <td class="py-3 px-4 font-medium text-gray-800"><?= date('d M Y', strtotime($r->tanggal_resep)) ?></td>
@@ -59,7 +90,7 @@
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="6" class="text-center py-8 text-gray-500">
+                        <td colspan="<?= ($this->session->userdata('role') == 'dokter') ? 5 : 6 ?>" class="text-center py-8 text-gray-500">
                             Belum ada riwayat resep obat.
                         </td>
                     </tr>
@@ -68,3 +99,8 @@
         </table>
     </div>
 </div>
+
+<!-- ============================================== -->
+<!-- PAGINATION                                     -->
+<!-- ============================================== -->
+<?= $pagination ?>

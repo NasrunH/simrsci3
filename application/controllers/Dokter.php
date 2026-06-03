@@ -11,11 +11,52 @@ class Dokter extends MY_Controller {
         
         $this->load->model('Dokter_model');
         $this->load->library('form_validation');
+        $this->load->library('pagination');
     }
 
     public function index() {
         $data['title']  = 'Data Dokter';
-        $data['dokter'] = $this->Dokter_model->get_all();
+        
+        // 1. Tangkap Parameter Search & Filter
+        $keyword = $this->input->get('keyword', TRUE);
+        $spesialisasi = $this->input->get('spesialisasi', TRUE);
+
+        // 2. Konfigurasi Pagination CI3
+        $config['base_url'] = base_url('dokter/index');
+        $config['total_rows'] = $this->Dokter_model->count_all_results($keyword, $spesialisasi);
+        $config['per_page'] = 10;
+        
+        $config['page_query_string'] = TRUE;
+        $config['reuse_query_string'] = TRUE; 
+        
+        // Style Pagination Tailwind CSS
+        $config['full_tag_open']    = '<nav class="flex items-center justify-center mt-4"><ul class="inline-flex items-center -space-x-px">';
+        $config['full_tag_close']   = '</ul></nav>';
+        $config['first_tag_open']   = '<li>'; $config['first_tag_close']  = '</li>';
+        $config['last_tag_open']    = '<li>'; $config['last_tag_close']   = '</li>';
+        $config['next_tag_open']    = '<li>'; $config['next_tag_close']   = '</li>';
+        $config['prev_tag_open']    = '<li>'; $config['prev_tag_close']   = '</li>';
+        $config['num_tag_open']     = '<li>'; $config['num_tag_close']    = '</li>';
+        $config['cur_tag_open']     = '<li><span class="px-3 py-2 text-sm font-medium text-white bg-primary border border-primary hover:bg-primary-hover cursor-default">';
+        $config['cur_tag_close']    = '</span></li>';
+        $config['attributes']       = ['class' => 'px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700'];
+
+        $this->pagination->initialize($config);
+
+        // 3. Ambil data dengan Limit dan Offset
+        $start = $this->input->get('per_page') ? $this->input->get('per_page') : 0;
+
+        $data['dokter']     = $this->Dokter_model->get_paginated($config['per_page'], $start, $keyword, $spesialisasi);
+        $data['pagination'] = $this->pagination->create_links();
+        $data['total_rows'] = $config['total_rows'];
+        $data['start']      = $start;
+        
+        // Kembalikan filter ke view
+        $data['keyword']       = $keyword;
+        $data['spesialisasi']  = $spesialisasi;
+        
+        // Ambil daftar unik spesialisasi untuk filter dropdown
+        $data['daftar_spesialisasi'] = $this->Dokter_model->get_unique_spesialisasi();
         
         $template_data = [
             'view_name' => 'dokter/index',

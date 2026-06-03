@@ -1,10 +1,18 @@
+<?php 
+    // Ambil permissions dari session untuk mengatur tampilan tombol
+    $permissions = $this->session->userdata('permissions') ?? [];
+    $can_create  = in_array('create_obat', $permissions);
+    $can_edit    = in_array('edit_obat', $permissions);
+    $can_delete  = in_array('delete_obat', $permissions);
+?>
+
 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
     <div>
         <h1 class="text-2xl font-bold text-gray-800">Inventaris Obat</h1>
-        <p class="text-gray-500 text-sm mt-1">Kelola data stok dan harga obat apotek.</p>
+        <p class="text-gray-500 text-sm mt-1">Kelola data stok dan harga obat di apotek.</p>
     </div>
     
-    <?php if($this->session->userdata('role') == 'admin'): ?>
+    <?php if($can_create): ?>
     <a href="<?= base_url('obat/create') ?>" class="bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2 shrink-0">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
         Tambah Obat
@@ -31,6 +39,7 @@
                 <option value="Sirup" <?= ($kategori ?? '') == 'Sirup' ? 'selected' : '' ?>>Sirup</option>
                 <option value="Salep" <?= ($kategori ?? '') == 'Salep' ? 'selected' : '' ?>>Salep</option>
                 <option value="Injeksi" <?= ($kategori ?? '') == 'Injeksi' ? 'selected' : '' ?>>Injeksi</option>
+                <option value="Lainnya" <?= ($kategori ?? '') == 'Lainnya' ? 'selected' : '' ?>>Lainnya</option>
             </select>
         </div>
         
@@ -48,7 +57,7 @@
 </div>
 
 <!-- ============================================== -->
-<!-- TABEL DATA                                     -->
+<!-- TABEL DATA OBAT                                -->
 <!-- ============================================== -->
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
     <div class="overflow-x-auto">
@@ -61,7 +70,9 @@
                     <th class="py-3 px-4 font-semibold">Kategori</th>
                     <th class="py-3 px-4 font-semibold text-center">Stok</th>
                     <th class="py-3 px-4 font-semibold text-right">Harga (Rp)</th>
-                    <?php if($this->session->userdata('role') == 'admin'): ?>
+                    
+                    <!-- Sembunyikan kolom Aksi jika user tidak punya izin edit ATAU delete -->
+                    <?php if($can_edit || $can_delete): ?>
                     <th class="py-3 px-4 font-semibold text-center w-32">Aksi</th>
                     <?php endif; ?>
                 </tr>
@@ -89,19 +100,27 @@
                             <?= number_format($o->harga, 0, ',', '.') ?>
                         </td>
                         
-                        <?php if($this->session->userdata('role') == 'admin'): ?>
+                        <!-- Logika Dinamis Tombol Aksi -->
+                        <?php if($can_edit || $can_delete): ?>
                         <td class="py-3 px-4 text-center">
                             <div class="flex justify-center gap-2">
+                                <?php if($can_edit): ?>
                                 <a href="<?= base_url('obat/edit/'.$o->id_obat) ?>" class="bg-amber-100 text-amber-700 hover:bg-amber-200 px-3 py-1.5 rounded-md transition-colors text-xs font-semibold">Edit</a>
+                                <?php endif; ?>
+                                
+                                <?php if($can_delete): ?>
                                 <a href="<?= base_url('obat/delete/'.$o->id_obat) ?>" class="btn-delete bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1.5 rounded-md transition-colors text-xs font-semibold">Hapus</a>
+                                <?php endif; ?>
                             </div>
                         </td>
                         <?php endif; ?>
+                        
                     </tr>
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="7" class="text-center py-8 text-gray-500">
+                        <?php $colspan = ($can_edit || $can_delete) ? 7 : 6; ?>
+                        <td colspan="<?= $colspan ?>" class="text-center py-8 text-gray-500">
                             Data obat tidak ditemukan. Coba sesuaikan kata kunci atau filter pencarian Anda.
                         </td>
                     </tr>
@@ -121,7 +140,6 @@
         dari total <span class="font-bold text-gray-800"><?= $total_rows ?></span> obat
     </div>
     
-    <!-- Render Link Pagination dari CI3 -->
     <div>
         <?= $pagination ?>
     </div>

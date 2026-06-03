@@ -5,16 +5,53 @@ class Pasien extends MY_Controller {
 
     public function __construct() {
         parent::__construct();
-        $this->restrict_to(['admin', 'dokter']);
+        $this->require_permission('view_pasien');
         $this->load->model('Pasien_model');
-        // Load library form validation untuk mengecek username duplikat
-        $this->load->library('form_validation'); 
+        $this->load->library('form_validation');
+        $this->load->library('pagination');
     }
 
     public function index() {
         $data['title']  = 'Data Pasien';
-        $data['pasien'] = $this->Pasien_model->get_all();
         
+        // 1. Tangkap Parameter Search & Filter
+        $keyword = $this->input->get('keyword', TRUE);
+        $jenis_kelamin = $this->input->get('jenis_kelamin', TRUE);
+
+        // 2. Konfigurasi Pagination CI3
+        $config['base_url'] = base_url('pasien/index');
+        $config['total_rows'] = $this->Pasien_model->count_all_results($keyword, $jenis_kelamin);
+        $config['per_page'] = 10;
+        
+        $config['page_query_string'] = TRUE;
+        $config['reuse_query_string'] = TRUE; 
+        
+        // Style Pagination Tailwind CSS
+        $config['full_tag_open']    = '<nav class="flex items-center justify-center mt-4"><ul class="inline-flex items-center -space-x-px">';
+        $config['full_tag_close']   = '</ul></nav>';
+        $config['first_tag_open']   = '<li>'; $config['first_tag_close']  = '</li>';
+        $config['last_tag_open']    = '<li>'; $config['last_tag_close']   = '</li>';
+        $config['next_tag_open']    = '<li>'; $config['next_tag_close']   = '</li>';
+        $config['prev_tag_open']    = '<li>'; $config['prev_tag_close']   = '</li>';
+        $config['num_tag_open']     = '<li>'; $config['num_tag_close']    = '</li>';
+        $config['cur_tag_open']     = '<li><span class="px-3 py-2 text-sm font-medium text-white bg-primary border border-primary hover:bg-primary-hover cursor-default">';
+        $config['cur_tag_close']    = '</span></li>';
+        $config['attributes']       = ['class' => 'px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700'];
+
+        $this->pagination->initialize($config);
+
+        // 3. Ambil data dengan Limit dan Offset
+        $start = $this->input->get('per_page') ? $this->input->get('per_page') : 0;
+
+        $data['pasien']     = $this->Pasien_model->get_paginated($config['per_page'], $start, $keyword, $jenis_kelamin);
+        $data['pagination'] = $this->pagination->create_links();
+        $data['total_rows'] = $config['total_rows'];
+        $data['start']      = $start;
+        
+        // Kembalikan filter ke view
+        $data['keyword']       = $keyword;
+        $data['jenis_kelamin'] = $jenis_kelamin;
+
         $template_data = [
             'view_name' => 'pasien/index',
             'view_data' => $data
@@ -23,9 +60,9 @@ class Pasien extends MY_Controller {
     }
 
     public function create() {
+        $this->require_permission('create_pasien');
+        
         if ($this->input->post()) {
-            
-            // 1. Validasi Form
             $this->form_validation->set_rules('username', 'Username', 'required|is_unique[users.username]', [
                 'is_unique' => 'Username ini sudah digunakan, silakan pilih yang lain.'
             ]);
@@ -34,17 +71,14 @@ class Pasien extends MY_Controller {
             ]);
 
             if ($this->form_validation->run() == FALSE) {
-                // Jika validasi gagal, kembalikan ke form dengan pesan error
                 $this->session->set_flashdata('error', validation_errors(' ', ' '));
             } else {
-                // 2. Siapkan Data Akun User (Role ID 3 = Pasien)
                 $data_user = [
                     'username' => $this->input->post('username', TRUE),
                     'password' => $this->input->post('password', TRUE),
-                    'role_id'  => 3 
+                    'role_id'  => 3 // Pasien
                 ];
 
-                // 3. Siapkan Data Profil Pasien
                 $data_pasien = [
                     'nama_lengkap'  => $this->input->post('nama_lengkap', TRUE),
                     'tanggal_lahir' => $this->input->post('tanggal_lahir', TRUE),
@@ -52,7 +86,6 @@ class Pasien extends MY_Controller {
                     'alamat'        => $this->input->post('alamat', TRUE)
                 ];
                 
-                // 4. Proses Insert via Transaction Model
                 if ($this->Pasien_model->insert_with_user($data_user, $data_pasien)) {
                     $this->session->set_flashdata('success', 'Data pasien dan akun berhasil dibuat.');
                     redirect('pasien');
@@ -63,51 +96,42 @@ class Pasien extends MY_Controller {
         }
 
         $data['title'] = 'Tambah Pasien Baru';
-        $template_data = [
-            'view_name' => 'pasien/create',
-            'view_data' => $data
-        ];
-        $this->load->view('layouts/template', $template_data);
+        $this->load->view('layouts/template', ['view_name' => 'pasien/create', 'view_data' => $data]);
     }
 
-        // Mengedit data pasien
-        public function edit($id) {
-            if ($this->input->post()) {
-                $data = [
-                    'nama_lengkap'  => $this->input->post('nama_lengkap', TRUE),
-                    'tanggal_lahir' => $this->input->post('tanggal_lahir', TRUE),
-                    'jenis_kelamin' => $this->input->post('jenis_kelamin', TRUE),
-                    'alamat'        => $this->input->post('alamat', TRUE)
-                ];
-                
-                $this->Pasien_model->update($id, $data);
-                
-                $this->session->set_flashdata('success', 'Data pasien berhasil diperbarui.');
-                redirect('pasien');
-            }
-
-            $data['title']  = 'Edit Data Pasien';
-            $data['pasien'] = $this->Pasien_model->get_by_id($id);
-            
-            // Jika data tidak ditemukan
-            if (!$data['pasien']) {
-                show_404();
-            }
-
-            $template_data = [
-                'view_name' => 'pasien/edit',
-                'view_data' => $data
+    public function edit($id) {
+        $this->require_permission('edit_pasien');
+        
+        if ($this->input->post()) {
+            $data = [
+                'nama_lengkap'  => $this->input->post('nama_lengkap', TRUE),
+                'tanggal_lahir' => $this->input->post('tanggal_lahir', TRUE),
+                'jenis_kelamin' => $this->input->post('jenis_kelamin', TRUE),
+                'alamat'        => $this->input->post('alamat', TRUE)
             ];
-            $this->load->view('layouts/template', $template_data);
-        }
-
-        // Menghapus data pasien
-        public function delete($id) {
-            // Proteksi Tambahan: Hanya ADMIN yang boleh menghapus pasien
-            $this->restrict_to(['admin']);
             
-            $this->Pasien_model->delete($id);
-            $this->session->set_flashdata('success', 'Data pasien berhasil dihapus.');
+            $this->Pasien_model->update($id, $data);
+            
+            $this->session->set_flashdata('success', 'Data pasien berhasil diperbarui.');
             redirect('pasien');
         }
+
+        $data['title']  = 'Edit Data Pasien';
+        $data['pasien'] = $this->Pasien_model->get_by_id($id);
+        
+        if (!$data['pasien']) show_404();
+
+        $this->load->view('layouts/template', ['view_name' => 'pasien/edit', 'view_data' => $data]);
     }
+
+    public function delete($id) {
+        $this->require_permission('delete_pasien');
+        
+        if($this->Pasien_model->delete($id)) {
+            $this->session->set_flashdata('success', 'Data pasien beserta akunnya berhasil dihapus.');
+        } else {
+            $this->session->set_flashdata('error', 'Gagal menghapus data pasien.');
+        }
+        redirect('pasien');
+    }
+}

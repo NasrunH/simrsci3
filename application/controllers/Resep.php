@@ -11,23 +11,62 @@ class Resep extends MY_Controller {
         $this->load->model('Pasien_model');
         $this->load->model('Dokter_model');
         $this->load->model('Obat_model');
+        $this->load->library('pagination');
     }
 
     public function index() {
-        // ... (Fungsi index tetap sama seperti sebelumnya) ...
         $data['title'] = 'Daftar Resep & Riwayat';
         $role = strtolower($this->session->userdata('role'));
         $user_id = $this->session->userdata('id_user');
 
+        // 1. Tangkap Parameter Search & Filter
+        $keyword = $this->input->get('keyword', TRUE);
+        $tanggal = $this->input->get('tanggal', TRUE);
+
+        // 2. Konfigurasi Pagination CI3
+        $config['base_url'] = base_url('resep/index');
+        $config['page_query_string'] = TRUE;
+        $config['reuse_query_string'] = TRUE;
+        $config['per_page'] = 10;
+        
+        // Style Pagination Tailwind CSS
+        $config['full_tag_open']    = '<nav class="flex items-center justify-center mt-4"><ul class="inline-flex items-center -space-x-px">';
+        $config['full_tag_close']   = '</ul></nav>';
+        $config['first_tag_open']   = '<li>'; $config['first_tag_close']  = '</li>';
+        $config['last_tag_open']    = '<li>'; $config['last_tag_close']   = '</li>';
+        $config['next_tag_open']    = '<li>'; $config['next_tag_close']   = '</li>';
+        $config['prev_tag_open']    = '<li>'; $config['prev_tag_close']   = '</li>';
+        $config['num_tag_open']     = '<li>'; $config['num_tag_close']    = '</li>';
+        $config['cur_tag_open']     = '<li><span class="px-3 py-2 text-sm font-medium text-white bg-primary border border-primary hover:bg-primary-hover cursor-default">';
+        $config['cur_tag_close']    = '</span></li>';
+        $config['attributes']       = ['class' => 'px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700'];
+
+        // 3. Ambil data sesuai role
+        $start = $this->input->get('per_page') ? $this->input->get('per_page') : 0;
+
         if ($role == 'admin') {
-            $data['resep'] = $this->Resep_model->get_all_resep();
+            $config['total_rows'] = $this->Resep_model->count_all_resep($keyword, $tanggal);
+            $data['resep'] = $this->Resep_model->get_all_resep_paginated($config['per_page'], $start, $keyword, $tanggal);
         } elseif ($role == 'dokter') {
             $dokter = $this->Dokter_model->get_by_user_id($user_id);
-            $data['resep'] = $dokter ? $this->Resep_model->get_resep_by_dokter($dokter->id_dokter) : [];
+            $id_dokter = $dokter ? $dokter->id_dokter : null;
+            $config['total_rows'] = $this->Resep_model->count_resep_by_dokter($id_dokter, $keyword, $tanggal);
+            $data['resep'] = $dokter ? $this->Resep_model->get_resep_by_dokter_paginated($id_dokter, $config['per_page'], $start, $keyword, $tanggal) : [];
         } elseif ($role == 'pasien') {
             $pasien = $this->Pasien_model->get_by_user_id($user_id);
-            $data['resep'] = $pasien ? $this->Resep_model->get_resep_by_pasien($pasien->id_pasien) : [];
+            $id_pasien = $pasien ? $pasien->id_pasien : null;
+            $config['total_rows'] = $this->Resep_model->count_resep_by_pasien($id_pasien, $keyword, $tanggal);
+            $data['resep'] = $pasien ? $this->Resep_model->get_resep_by_pasien_paginated($id_pasien, $config['per_page'], $start, $keyword, $tanggal) : [];
         }
+
+        $this->pagination->initialize($config);
+
+        $data['pagination'] = $this->pagination->create_links();
+        $data['total_rows'] = $config['total_rows'] ?? 0;
+        $data['start'] = $start;
+        $data['keyword'] = $keyword;
+        $data['tanggal'] = $tanggal;
+
         $this->load->view('layouts/template', ['view_name' => 'resep/index', 'view_data' => $data]);
     }
 

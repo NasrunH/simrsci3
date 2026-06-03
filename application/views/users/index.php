@@ -1,13 +1,23 @@
+<?php 
+    // Ambil permission dari session
+    $permissions = $this->session->userdata('permissions') ?? [];
+    $can_create  = in_array('create_users', $permissions);
+    $can_edit    = in_array('edit_users', $permissions);
+    $can_delete  = in_array('delete_users', $permissions);
+?>
+
 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
     <div>
         <h1 class="text-2xl font-bold text-gray-800">Manajemen Akses User</h1>
-        <p class="text-gray-500 text-sm mt-1">Kelola akun, password, dan hak akses pengguna sistem.</p>
+        <p class="text-gray-500 text-sm mt-1">Kelola akun, password, dan role pengguna sistem.</p>
     </div>
     
+    <?php if($can_create): ?>
     <a href="<?= base_url('users/create') ?>" class="bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2 shrink-0">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
-        Buat Akun Admin
+        Registrasi User Baru
     </a>
+    <?php endif; ?>
 </div>
 
 <!-- ============================================== -->
@@ -57,7 +67,10 @@
                     <th class="py-3 px-4 font-semibold">Username</th>
                     <th class="py-3 px-4 font-semibold">Peran (Role)</th>
                     <th class="py-3 px-4 font-semibold">Tgl Terdaftar</th>
+                    
+                    <?php if($can_edit || $can_delete): ?>
                     <th class="py-3 px-4 font-semibold text-center w-32">Aksi</th>
+                    <?php endif; ?>
                 </tr>
             </thead>
             <tbody class="text-sm text-gray-700">
@@ -86,22 +99,29 @@
                             <?= date('d M Y, H:i', strtotime($u->created_at)) ?>
                         </td>
                         
+                        <?php if($can_edit || $can_delete): ?>
                         <td class="py-3 px-4 text-center">
                             <div class="flex justify-center gap-2">
-                                <a href="<?= base_url('users/edit/'.$u->id_user) ?>" class="bg-amber-100 text-amber-700 hover:bg-amber-200 px-3 py-1.5 rounded-md transition-colors text-xs font-semibold">Edit</a>
-                                
-                                <?php if($u->id_user != $this->session->userdata('id_user')): ?>
-                                <a href="<?= base_url('users/delete/'.$u->id_user) ?>" class="btn-delete bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1.5 rounded-md transition-colors text-xs font-semibold">Hapus</a>
-                                <?php else: ?>
-                                <button disabled class="bg-gray-100 text-gray-400 px-3 py-1.5 rounded-md text-xs font-semibold cursor-not-allowed" title="Anda tidak bisa menghapus diri sendiri">Hapus</button>
+                                <?php if($can_edit): ?>
+                                    <a href="<?= base_url('users/edit/'.$u->id_user) ?>" class="bg-amber-100 text-amber-700 hover:bg-amber-200 px-3 py-1.5 rounded-md transition-colors text-xs font-semibold">Edit</a>
+                                <?php endif; ?>
+
+                                <?php if($can_delete): ?>
+                                    <?php if($u->id_user != $this->session->userdata('id_user')): ?>
+                                    <a href="<?= base_url('users/delete/'.$u->id_user) ?>" class="btn-delete bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1.5 rounded-md transition-colors text-xs font-semibold">Hapus</a>
+                                    <?php else: ?>
+                                    <button disabled class="bg-gray-100 text-gray-400 px-3 py-1.5 rounded-md text-xs font-semibold cursor-not-allowed" title="Anda tidak bisa menghapus diri sendiri">Hapus</button>
+                                    <?php endif; ?>
                                 <?php endif; ?>
                             </div>
                         </td>
+                        <?php endif; ?>
                     </tr>
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="5" class="text-center py-8 text-gray-500">
+                        <?php $colspan = ($can_edit || $can_delete) ? 5 : 4; ?>
+                        <td colspan="<?= $colspan ?>" class="text-center py-8 text-gray-500">
                             Tidak ada user yang cocok dengan pencarian Anda.
                         </td>
                     </tr>

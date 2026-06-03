@@ -5,14 +5,14 @@ class Dashboard extends MY_Controller {
 
     public function __construct() {
         parent::__construct();
-        // Mengizinkan admin, dokter, dan pasien masuk ke dashboard
-        $this->restrict_to(['admin', 'dokter', 'pasien']);
+        // HAPUS restrict_to(['admin', 'dokter', 'pasien'])
+        // Ganti dengan pengecekan permission, atau biarkan semua role yang sudah login masuk
         
-        // Load model yang dibutuhkan untuk statistik dashboard
         $this->load->model('Laporan_model');
     }
 
     public function index() {
+        // ... kode index Anda sebelumnya ...
         $role = $this->session->userdata('role');
         
         // Data dasar untuk dilempar ke view
@@ -28,10 +28,9 @@ class Dashboard extends MY_Controller {
         }
 
         // --- SETUP TEMPLATE CI3 ---
-        // Kita menggunakan layout template, bukan meload view secara langsung
         $template_data = [
-            'view_name' => 'dashboard/index', // View yang akan disisipkan ke tengah template
-            'view_data' => $data              // Variabel data yang dikirim ke view tersebut
+            'view_name' => 'dashboard/index', 
+            'view_data' => $data              
         ];
 
         $this->load->view('layouts/template', $template_data);

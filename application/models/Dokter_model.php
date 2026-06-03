@@ -3,6 +3,60 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Dokter_model extends CI_Model {
 
+    // ==========================================
+    // FUNGSI UNTUK PAGINATION, SEARCH & FILTER
+    // ==========================================
+    public function get_paginated($limit, $start, $keyword = null, $spesialisasi = null) {
+        $this->db->select('*');
+        $this->db->from('dokter');
+
+        // Filter Pencarian (Search by Nama atau Spesialisasi) - Case Insensitive
+        if (!empty($keyword)) {
+            $this->db->group_start();
+            $this->db->where("LOWER(nama_dokter) LIKE LOWER('%".$this->db->escape_like_str($keyword)."%')", NULL, FALSE);
+            $this->db->or_where("LOWER(spesialisasi) LIKE LOWER('%".$this->db->escape_like_str($keyword)."%')", NULL, FALSE);
+            $this->db->group_end();
+        }
+
+        // Filter Spesialisasi
+        if (!empty($spesialisasi)) {
+            $this->db->where('spesialisasi', $spesialisasi);
+        }
+
+        $this->db->order_by('id_dokter', 'DESC'); // Tampilkan data terbaru di atas
+        $this->db->limit($limit, $start);
+        
+        return $this->db->get()->result();
+    }
+
+    public function count_all_results($keyword = null, $spesialisasi = null) {
+        $this->db->from('dokter');
+
+        if (!empty($keyword)) {
+            $this->db->group_start();
+            $this->db->where("LOWER(nama_dokter) LIKE LOWER('%".$this->db->escape_like_str($keyword)."%')", NULL, FALSE);
+            $this->db->or_where("LOWER(spesialisasi) LIKE LOWER('%".$this->db->escape_like_str($keyword)."%')", NULL, FALSE);
+            $this->db->group_end();
+        }
+
+        if (!empty($spesialisasi)) {
+            $this->db->where('spesialisasi', $spesialisasi);
+        }
+
+        return $this->db->count_all_results();
+    }
+
+    public function get_unique_spesialisasi() {
+        $this->db->distinct();
+        $this->db->select('spesialisasi');
+        $this->db->from('dokter');
+        $this->db->order_by('spesialisasi', 'ASC');
+        return $this->db->get()->result();
+    }
+
+    // ==========================================
+    // FUNGSI CRUD STANDAR BAWAAN
+    // ==========================================
     public function get_all() {
         return $this->db->get('dokter')->result();
     }

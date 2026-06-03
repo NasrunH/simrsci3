@@ -5,7 +5,9 @@ class Roles extends MY_Controller {
 
     public function __construct() {
         parent::__construct();
-        $this->restrict_to(['admin']); // Hanya Admin
+        // Syarat dasar: harus punya permission view_roles
+        $this->require_permission('view_roles');
+        
         $this->load->model('Role_model');
         $this->load->library('pagination');
         $this->load->library('form_validation');
@@ -26,16 +28,11 @@ class Roles extends MY_Controller {
         // Style Pagination Tailwind CSS
         $config['full_tag_open']    = '<nav class="flex items-center justify-center mt-4"><ul class="inline-flex items-center -space-x-px">';
         $config['full_tag_close']   = '</ul></nav>';
-        $config['first_tag_open']   = '<li>';
-        $config['first_tag_close']  = '</li>';
-        $config['last_tag_open']    = '<li>';
-        $config['last_tag_close']   = '</li>';
-        $config['next_tag_open']    = '<li>';
-        $config['next_tag_close']   = '</li>';
-        $config['prev_tag_open']    = '<li>';
-        $config['prev_tag_close']   = '</li>';
-        $config['num_tag_open']     = '<li>';
-        $config['num_tag_close']    = '</li>';
+        $config['first_tag_open']   = '<li>'; $config['first_tag_close']  = '</li>';
+        $config['last_tag_open']    = '<li>'; $config['last_tag_close']   = '</li>';
+        $config['next_tag_open']    = '<li>'; $config['next_tag_close']   = '</li>';
+        $config['prev_tag_open']    = '<li>'; $config['prev_tag_close']   = '</li>';
+        $config['num_tag_open']     = '<li>'; $config['num_tag_close']    = '</li>';
         $config['cur_tag_open']     = '<li><span class="px-3 py-2 text-sm font-medium text-white bg-primary border border-primary hover:bg-primary-hover cursor-default">';
         $config['cur_tag_close']    = '</span></li>';
         $config['attributes']       = ['class' => 'px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700'];
@@ -54,6 +51,9 @@ class Roles extends MY_Controller {
     }
 
     public function create() {
+        // Harus punya permission create_roles
+        $this->require_permission('create_roles');
+
         if ($this->input->post()) {
             $this->form_validation->set_rules('name', 'Nama Role', 'required|is_unique[roles.name]|alpha_dash', [
                 'is_unique' => 'Role ini sudah ada.',
@@ -64,7 +64,6 @@ class Roles extends MY_Controller {
                 $this->session->set_flashdata('error', validation_errors(' ', ' '));
             } else {
                 $data = [
-                    // Simpan sebagai huruf kecil agar format seragam (admin, dokter, apoteker, dll)
                     'name' => strtolower($this->input->post('name', TRUE))
                 ];
                 $this->Role_model->insert($data);
@@ -78,8 +77,9 @@ class Roles extends MY_Controller {
     }
 
     public function edit($id) {
-        // Proteksi: Role Admin (1), Dokter (2), Pasien (3) lebih baik tidak diubah namanya 
-        // agar tidak merusak logika sistem yang hardcoded seperti `if($role == 'admin')`.
+        // Harus punya permission edit_roles
+        $this->require_permission('edit_roles');
+
         if (in_array($id, [1, 2, 3])) {
             $this->session->set_flashdata('error', 'Role sistem bawaan (Admin, Dokter, Pasien) tidak boleh diedit namanya demi integritas sistem.');
             redirect('roles');
@@ -113,7 +113,9 @@ class Roles extends MY_Controller {
     }
 
     public function delete($id) {
-        // Proteksi mutlak! Jangan sampai menghapus core roles.
+        // Harus punya permission delete_roles
+        $this->require_permission('delete_roles');
+
         if (in_array($id, [1, 2, 3])) {
             $this->session->set_flashdata('error', 'Role sistem bawaan (Admin, Dokter, Pasien) tidak boleh dihapus.');
             redirect('roles');
@@ -126,8 +128,12 @@ class Roles extends MY_Controller {
         }
         redirect('roles');
     }
+
     public function permissions($id) {
-        // Proteksi: Role Admin (ID 1) tidak boleh diedit permission-nya agar tidak terkunci dari sistem
+        // Asumsi: mengelola hak akses (permissions) tergabung ke dalam hak 'edit_roles'
+        $this->require_permission('edit_roles');
+
+        // Role Admin (ID 1) tidak boleh diedit permission-nya agar tidak terkunci
         if ($id == 1) {
             $this->session->set_flashdata('error', 'Role Admin adalah Superadmin. Hak aksesnya mutlak dan tidak dapat dimodifikasi.');
             redirect('roles');
@@ -137,7 +143,6 @@ class Roles extends MY_Controller {
         if (!$role) show_404();
 
         if ($this->input->post()) {
-            // Ambil array dari checkbox (jika kosong, array diset kosong)
             $permission_ids = $this->input->post('permissions') ?? [];
             
             if ($this->Role_model->sync_permissions($id, $permission_ids)) {
@@ -151,7 +156,7 @@ class Roles extends MY_Controller {
         $data['title'] = 'Kelola Hak Akses';
         $data['role'] = $role;
         $data['all_permissions'] = $this->Role_model->get_all_permissions();
-        $data['role_permissions'] = $this->Role_model->get_role_permission_ids($id); // Array ID
+        $data['role_permissions'] = $this->Role_model->get_role_permission_ids($id); 
 
         $this->load->view('layouts/template', ['view_name' => 'roles/permissions', 'view_data' => $data]);
     }
