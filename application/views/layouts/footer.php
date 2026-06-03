@@ -31,35 +31,33 @@
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
             
-            if (toggleBtn && sidebar) {
+            if (toggleBtn) {
                 toggleBtn.addEventListener('click', () => {
                     sidebar.classList.toggle('-translate-x-full');
                     sidebar.classList.toggle('translate-x-0');
-                    if (overlay) overlay.classList.toggle('hidden');
+                    overlay.classList.toggle('hidden');
                 });
             }
             
-            if (closeBtn && sidebar) {
+            if (closeBtn) {
                 closeBtn.addEventListener('click', () => {
                     sidebar.classList.add('-translate-x-full');
                     sidebar.classList.remove('translate-x-0');
-                    if (overlay) overlay.classList.add('hidden');
+                    overlay.classList.add('hidden');
                 });
             }
 
             // Close sidebar when clicking a link on mobile
-            if (sidebar) {
-                const sidebarLinks = sidebar.querySelectorAll('a');
-                sidebarLinks.forEach(link => {
-                    link.addEventListener('click', () => {
-                        if (window.innerWidth < 768) {
-                            sidebar.classList.add('-translate-x-full');
-                            sidebar.classList.remove('translate-x-0');
-                            if (overlay) overlay.classList.add('hidden');
-                        }
-                    });
+            const sidebarLinks = sidebar.querySelectorAll('a');
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    if (window.innerWidth < 768) {
+                        sidebar.classList.add('-translate-x-full');
+                        sidebar.classList.remove('translate-x-0');
+                        overlay.classList.add('hidden');
+                    }
                 });
-            }
+            });
 
             // 3. Konfirmasi Logout
             $('.btn-logout').on('click', function(e) {

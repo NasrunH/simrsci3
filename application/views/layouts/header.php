@@ -43,4 +43,4 @@
         }
     </script>
 </head>
-<body class="bg-mainbg text-textmain font-sans flex h-screen overflow-hidden antialiased">
+<body class="bg-mainbg text-textmain font-sans flex h-screen overflow-hidden antialiased"></body>
