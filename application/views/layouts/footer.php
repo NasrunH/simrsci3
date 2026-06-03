@@ -2,6 +2,9 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             
+            // Initialize Lucide Icons
+            lucide.createIcons();
+            
             // 1. Flashdata SweetAlert CodeIgniter
             <?php if($this->session->flashdata('success')): ?>
                 Swal.fire({
@@ -22,7 +25,43 @@
                 });
             <?php endif; ?>
 
-            // 2. Konfirmasi Logout
+            // 2. Sidebar Toggle
+            const toggleBtn = document.getElementById('toggleSidebar');
+            const closeBtn = document.getElementById('closeSidebar');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            if (toggleBtn && sidebar) {
+                toggleBtn.addEventListener('click', () => {
+                    sidebar.classList.toggle('-translate-x-full');
+                    sidebar.classList.toggle('translate-x-0');
+                    if (overlay) overlay.classList.toggle('hidden');
+                });
+            }
+            
+            if (closeBtn && sidebar) {
+                closeBtn.addEventListener('click', () => {
+                    sidebar.classList.add('-translate-x-full');
+                    sidebar.classList.remove('translate-x-0');
+                    if (overlay) overlay.classList.add('hidden');
+                });
+            }
+
+            // Close sidebar when clicking a link on mobile
+            if (sidebar) {
+                const sidebarLinks = sidebar.querySelectorAll('a');
+                sidebarLinks.forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (window.innerWidth < 768) {
+                            sidebar.classList.add('-translate-x-full');
+                            sidebar.classList.remove('translate-x-0');
+                            if (overlay) overlay.classList.add('hidden');
+                        }
+                    });
+                });
+            }
+
+            // 3. Konfirmasi Logout
             $('.btn-logout').on('click', function(e) {
                 e.preventDefault();
                 const href = $(this).attr('href');
@@ -42,7 +81,7 @@
                 });
             });
 
-            // 3. Konfirmasi Delete Global
+            // 4. Konfirmasi Delete Global
             $('.btn-delete').on('click', function(e) {
                 e.preventDefault();
                 const href = $(this).attr('href');
