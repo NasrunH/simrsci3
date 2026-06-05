@@ -92,6 +92,11 @@
                 <span class="sidebar-text font-medium text-sm transition-opacity duration-300">Manajemen Obat</span>
             </a>
             <?php endif; ?>
+
+            <!-- MENU BARU: MANAJEMEN LAYANAN -->
+            <?php if(in_array('view_layanan', $permissions)): ?>
+            <a href="<?= base_url('layanan') ?>" class="flex items-center gap-3 px-4 py-2.5 rounded-lg <?= ($this->uri->segment(1) == 'layanan') ? 'bg-primary border-l-4 border-accent' : 'hover:bg-primary-hover' ?>"><span class="font-medium text-sm">Tarif & Layanan Poli</span></a>
+            <?php endif; ?>
         <?php endif; ?>
 
         <!-- GRUP SISTEM (KHUSUS ADMIN) -->
@@ -115,6 +120,20 @@
         <?php endif; ?>
 
         <!-- GRUP TRANSAKSI -->
+        <?php if(in_array('view_rm', $permissions)): ?>
+            <div class="pt-4 pb-1"><p class="px-4 text-xs font-semibold text-accent uppercase opacity-60">Rekam Medis (EMR)</p></div>
+            <a href="<?= base_url('rekam_medis') ?>" class="flex items-center gap-3 px-4 py-2.5 rounded-lg <?= ($this->uri->segment(1) == 'rekam_medis') ? 'bg-primary border-l-4 border-accent' : 'hover:bg-primary-hover' ?>">
+                <span class="font-medium text-sm">Pemeriksaan (SOAP)</span>
+            </a>
+        <?php endif; ?>
+
+        <?php if(in_array('view_antrean', $permissions)): ?>
+            <div class="pt-4 pb-1"><p class="px-4 text-xs font-semibold text-accent uppercase opacity-60">Layanan</p></div>
+            <a href="<?= base_url('antrean') ?>" class="flex items-center gap-3 px-4 py-2.5 rounded-lg <?= ($this->uri->segment(1) == 'antrean') ? 'bg-primary border-l-4 border-accent' : 'hover:bg-primary-hover' ?>">
+                <span class="font-medium text-sm">Antrean Poli</span>
+            </a>
+        <?php endif; ?>
+
         <?php if(in_array('view_resep', $permissions)): ?>
             <div class="pt-4 pb-1 sidebar-group-header"><p class="px-4 text-xs font-semibold text-accent uppercase opacity-60">Transaksi & Riwayat</p></div>
             <hr class="border-t border-primary-hover/30 my-2 sidebar-divider hidden" />
@@ -125,6 +144,12 @@
         <?php endif; ?>
 
         <!-- GRUP LAPORAN -->
+         <?php if(in_array('view_billing', $permissions)): ?>
+            <div class="pt-4 pb-1"><p class="px-4 text-xs font-semibold text-accent uppercase opacity-60">Keuangan</p></div>
+            <a href="<?= base_url('billing') ?>" class="flex items-center gap-3 px-4 py-2.5 rounded-lg <?= ($this->uri->segment(1) == 'billing') ? 'bg-primary border-l-4 border-accent' : 'hover:bg-primary-hover' ?>">
+                <span class="font-medium text-sm">Kasir & Billing</span>
+            </a>
+        <?php endif; ?>
         <?php if(in_array('view_laporan', $permissions)): ?>
             <div class="pt-4 pb-1 sidebar-group-header"><p class="px-4 text-xs font-semibold text-accent uppercase opacity-60">Laporan</p></div>
             <hr class="border-t border-primary-hover/30 my-2 sidebar-divider hidden" />

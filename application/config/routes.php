@@ -70,6 +70,12 @@ $route['obat/delete/(:num)'] = 'obat/delete/$1';
 // ==========================================
 // TRANSAKSI (RESEP)
 // ==========================================
+
+$route['rekam_medis']               = 'rekam_medis/index';
+$route['rekam_medis/create']        = 'rekam_medis/create';
+$route['rekam_medis/show/(:num)']   = 'rekam_medis/show/$1';
+$route['rekam_medis/delete/(:num)'] = 'rekam_medis/delete/$1';
+
 $route['resep']               = 'resep/index';
 $route['resep/create']        = 'resep/create';
 $route['resep/show/(:num)']   = 'resep/show/$1';
@@ -77,6 +83,26 @@ $route['resep/show/(:num)']   = 'resep/show/$1';
 // demi rekam medis yang valid. Jika butuh, tambahkan route edit/delete di sini.
 
 // ==========================================
+// MODUL ANTREAN POLI
+// ==========================================
+$route['antrean'] = 'antrean/index';
+$route['antrean/create'] = 'antrean/create';
+$route['antrean/update_status/(:num)/(:any)'] = 'antrean/update_status/$1/$2';
+$route['antrean/get_dokter_by_layanan/(:num)'] = 'antrean/get_dokter_by_layanan/$1';
+
+// ==========================================
 // LAPORAN
 // ==========================================
 $route['laporan'] = 'laporan/index';
+
+// ==========================================
+// MODUL KASIR & BILLING
+// ==========================================
+$route['billing']               = 'billing/index';
+$route['billing/pay/(:num)']    = 'billing/pay/$1';
+$route['billing/invoice/(:num)'] = 'billing/invoice/$1';
+
+$route['layanan'] = 'layanan/index';
+$route['layanan/create'] = 'layanan/create';
+$route['layanan/edit/(:num)'] = 'layanan/edit/$1';
+$route['layanan/delete/(:num)'] = 'layanan/delete/$1';

@@ -70,7 +70,7 @@ class Resep extends MY_Controller {
         $this->load->view('layouts/template', ['view_name' => 'resep/index', 'view_data' => $data]);
     }
 
-    public function create() {
+public function create() {
         $this->require_permission('create_resep');
 
         if ($this->input->post()) {
@@ -79,35 +79,30 @@ class Resep extends MY_Controller {
             
             $id_dokter = null;
 
-            // 1. LOGIKA PENENTUAN DOKTER
             if ($role == 'admin') {
-                // Jika Admin, wajib pilih dokter dari dropdown form
                 $id_dokter = $this->input->post('id_dokter', TRUE);
                 if (empty($id_dokter)) {
                     $this->session->set_flashdata('error', 'Admin wajib memilih Dokter Pemeriksa untuk resep ini.');
                     redirect('resep/create');
                 }
             } else {
-                // Jika Dokter, ambil otomatis dari profil akun yang sedang login
                 $dokter = $this->Dokter_model->get_by_user_id($user_id);
                 $id_dokter = $dokter ? $dokter->id_dokter : null;
 
                 if (!$id_dokter) {
-                    $this->session->set_flashdata('error', 'Akun Anda tidak terhubung dengan profil Dokter. Silakan hubungi Admin.');
+                    $this->session->set_flashdata('error', 'Akun Anda tidak terhubung dengan profil Dokter.');
                     redirect('resep/create');
                 }
             }
 
-            // 2. Siapkan Data Header Resep
             $data_resep = [
                 'tanggal_resep' => date('Y-m-d'),
                 'id_pasien'     => $this->input->post('id_pasien', TRUE),
                 'id_dokter'     => $id_dokter,
-                'id_user'       => $user_id, // Catat user (admin/dokter) yang menginputkan resep ke sistem
-                'total_harga'   => 0
+                'id_user'       => $user_id,
+                'total_harga'   => 0 
             ];
 
-            // 3. Siapkan Data Detail Resep & Validasi Stok
             $id_obat_arr      = $this->input->post('id_obat');
             $jumlah_arr       = $this->input->post('jumlah');
             $aturan_pakai_arr = $this->input->post('aturan_pakai');
@@ -139,9 +134,15 @@ class Resep extends MY_Controller {
 
             $data_resep['total_harga'] = $total_harga;
 
-            // 4. Proses Simpan
-            if ($this->Resep_model->insert_resep_lengkap($data_resep, $data_detail)) {
-                $this->session->set_flashdata('success', 'Resep berhasil dibuat dan stok obat telah dikurangi.');
+            // Proses Insert Header-Detail
+            $insert_id = $this->Resep_model->insert_resep_lengkap($data_resep, $data_detail);
+            
+            if ($insert_id) {
+                // INTEGRASI KASIR: Otomatis daftarkan transaksi baru ke modul Kasir & Billing!
+                $this->load->model('Billing_model');
+                $this->Billing_model->create_from_resep($insert_id);
+
+                $this->session->set_flashdata('success', 'Resep berhasil dibuat dan tagihan kasir otomatis diterbitkan.');
                 redirect('resep');
             } else {
                 $this->session->set_flashdata('error', 'Gagal membuat resep. Silakan coba lagi.');
@@ -153,13 +154,17 @@ class Resep extends MY_Controller {
         $data['pasien'] = $this->Pasien_model->get_all();
         $data['obat'] = $this->Obat_model->get_all();
         
-        // Kirim daftar dokter khusus jika yang login adalah admin
+        $selected_pasien = $this->input->get('pasien', TRUE);
+        $data['selected_pasien'] = $selected_pasien;
+
         if (strtolower($this->session->userdata('role')) == 'admin') {
             $data['dokters'] = $this->Dokter_model->get_all();
+            $data['selected_dokter'] = $this->input->get('dokter', TRUE);
         }
         
         $this->load->view('layouts/template', ['view_name' => 'resep/create', 'view_data' => $data]);
     }
+
     public function show($id) {
         $data['title'] = 'Detail Resep';
         $data['resep'] = $this->db->select('resep.*, pasien.nama_lengkap as nama_pasien, pasien.no_rekam_medis, dokter.nama_dokter, dokter.spesialisasi')
