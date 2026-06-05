@@ -12,6 +12,9 @@ class Auth extends CI_Controller {
 
     public function index() {
         if ($this->session->userdata('logged_in')) {
+            if (strtolower($this->session->userdata('role') ?? '') === 'pasien') {
+                redirect('portal_pasien');
+            }
             redirect('dashboard');
         }
         $this->load->view('auth/login');
@@ -39,6 +42,9 @@ class Auth extends CI_Controller {
             $this->session->set_userdata($session_data);
             
             $this->session->set_flashdata('success', 'Selamat datang kembali, ' . $user->username);
+            if (strtolower($user->role_name) === 'pasien') {
+                redirect('portal_pasien');
+            }
             redirect('dashboard');
         } else {
             $this->session->set_flashdata('error', 'Username atau password salah.');

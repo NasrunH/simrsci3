@@ -8,7 +8,6 @@ class Portal_pasien extends MY_Controller {
 
     public function __construct() {
         parent::__construct();
-        // Pastikan hanya user dengan role pasien yang bisa mengakses portal ini
         $role = strtolower($this->session->userdata('role') ?? '');
         if ($role !== 'pasien') {
             show_error('Akses Ditolak: Halaman ini hanya diperuntukkan bagi akun Pasien.', 403, 'Akses Khusus Pasien');
@@ -18,26 +17,53 @@ class Portal_pasien extends MY_Controller {
         $this->load->model('Layanan_model');
         $this->load->model('Billing_model');
         $this->load->model('Resep_model');
+        $this->load->model('Antrean_model');
 
-        // Tarik data profil pasien berdasarkan user_id login
         $user_id = $this->session->userdata('id_user');
         $this->pasien_profile = $this->Pasien_model->get_by_user_id($user_id);
-        
+
         if (!$this->pasien_profile) {
-            show_error('Profil medis Anda tidak ditemukan. Silakan hubungi admin untuk menautkan akun Anda ke data Rekam Medis.', 404, 'Profil Medis Kosong');
+            show_error('Profil medis Anda tidak ditemukan. Silakan hubungi admin.', 404, 'Profil Medis Kosong');
         }
 
         $this->pasien_id = $this->pasien_profile->id_pasien;
     }
 
-    // ==========================================
-    // DASHBOARD PASIEN
-    // ==========================================
+    private function _render($view, $data = []) {
+        $segment = $this->uri->segment(2);
+        $nav_map = [
+            ''                 => 'home',
+            'antrean_saat_ini' => 'live',
+            'buat_antrean'       => 'daftar',
+            'rekam_medis'        => 'medis',
+            'billing'            => 'tagihan',
+            'invoice'            => 'tagihan',
+        ];
+
+        $data['title']         = $data['title'] ?? 'Portal Pasien';
+        $data['pasien']        = $data['pasien'] ?? $this->pasien_profile;
+        $data['portal_nav']    = $nav_map[$segment ?? ''] ?? 'home';
+        $data['tagihan_badge'] = $this->db
+            ->where(['id_pasien' => $this->pasien_id, 'status' => 'Belum Lunas'])
+            ->count_all_results('billing');
+
+        $this->load->view('layouts/portal_mobile', [
+            'view_name' => $view,
+            'view_data' => $data,
+            'title'           => $data['title'],
+            'pasien'          => $data['pasien'],
+            'portal_nav'      => $data['portal_nav'],
+            'tagihan_badge'   => $data['tagihan_badge'],
+            'hide_bottom_nav' => $data['hide_bottom_nav'] ?? false,
+            'show_back'       => $data['show_back'] ?? false,
+            'back_url'        => $data['back_url'] ?? base_url('portal_pasien'),
+        ]);
+    }
+
     public function index() {
-        $data['title'] = 'Portal Pasien - SIMRS';
+        $data['title'] = 'Beranda';
         $data['pasien'] = $this->pasien_profile;
-        
-        // 1. Ambil antrean aktif hari ini (jika ada)
+
         $this->db->select('antrean.*, dokter.nama_dokter, layanan.nama_layanan');
         $this->db->from('antrean');
         $this->db->join('dokter', 'dokter.id_dokter = antrean.id_dokter');
@@ -46,11 +72,22 @@ class Portal_pasien extends MY_Controller {
         $this->db->where('antrean.tanggal_antrean', date('Y-m-d'));
         $data['antrean_hari_ini'] = $this->db->get()->row();
 
-        // 2. Ambil ringkasan statistik
-        $data['total_kunjungan'] = $this->db->where('id_pasien', $this->pasien_id)->count_all_results('rekam_medis');
-        $data['tagihan_aktif'] = $this->db->where(['id_pasien' => $this->pasien_id, 'status' => 'Belum Lunas'])->count_all_results('billing');
+        if ($data['antrean_hari_ini']) {
+            $a = $data['antrean_hari_ini'];
+            $this->db->where('id_layanan', $a->id_layanan);
+            $this->db->where('tanggal_antrean', $a->tanggal_antrean);
+            $this->db->where('status', 'Menunggu');
+            $this->db->where('no_antrean <', $a->no_antrean);
+            $data['antrean_di_depan'] = $this->db->count_all_results('antrean');
+        } else {
+            $data['antrean_di_depan'] = 0;
+        }
 
-        // 3. Ambil 3 Kunjungan Medis Terakhir
+        $data['total_kunjungan'] = $this->db->where('id_pasien', $this->pasien_id)->count_all_results('rekam_medis');
+        $data['tagihan_aktif'] = $this->db
+            ->where(['id_pasien' => $this->pasien_id, 'status' => 'Belum Lunas'])
+            ->count_all_results('billing');
+
         $this->db->select('rekam_medis.*, dokter.nama_dokter');
         $this->db->from('rekam_medis');
         $this->db->join('dokter', 'dokter.id_dokter = rekam_medis.id_dokter');
@@ -59,97 +96,122 @@ class Portal_pasien extends MY_Controller {
         $this->db->limit(3);
         $data['kunjungan_terakhir'] = $this->db->get()->result();
 
-        $this->load->view('layouts/template', ['view_name' => 'portal_pasien/dashboard', 'view_data' => $data]);
+        $this->_render('portal_pasien/dashboard', $data);
     }
 
-    // ==========================================
-    // PENDAFTARAN ANTREAN MANDIRI
-    // ==========================================
+    public function status_antrean_ajax() {
+        $this->output->set_content_type('application/json');
+        $tanggal = date('Y-m-d');
+
+        $this->db->select('antrean.*, dokter.nama_dokter, layanan.nama_layanan');
+        $this->db->from('antrean');
+        $this->db->join('dokter', 'dokter.id_dokter = antrean.id_dokter');
+        $this->db->join('layanan', 'layanan.id_layanan = antrean.id_layanan', 'left');
+        $this->db->where('antrean.id_pasien', $this->pasien_id);
+        $this->db->where('antrean.tanggal_antrean', $tanggal);
+        $antrean = $this->db->get()->row();
+
+        if (!$antrean) {
+            echo json_encode(['has_queue' => false]);
+            return;
+        }
+
+        $di_depan = 0;
+        if ($antrean->status === 'Menunggu') {
+            $this->db->where('id_layanan', $antrean->id_layanan);
+            $this->db->where('tanggal_antrean', $tanggal);
+            $this->db->where('status', 'Menunggu');
+            $this->db->where('no_antrean <', $antrean->no_antrean);
+            $di_depan = $this->db->count_all_results('antrean');
+        }
+
+        $this->db->select('no_antrean');
+        $this->db->where('id_layanan', $antrean->id_layanan);
+        $this->db->where('tanggal_antrean', $tanggal);
+        $this->db->where('status', 'Diperiksa');
+        $this->db->order_by('id_antrean', 'DESC');
+        $dipanggil = $this->db->get('antrean')->row();
+
+        echo json_encode([
+            'has_queue'      => true,
+            'no_antrean'     => (int) $antrean->no_antrean,
+            'status'         => $antrean->status,
+            'nama_layanan'   => $antrean->nama_layanan,
+            'nama_dokter'    => $antrean->nama_dokter,
+            'di_depan'       => $di_depan,
+            'sedang_dipanggil' => $dipanggil ? (int) $dipanggil->no_antrean : null,
+        ]);
+    }
+
     public function buat_antrean() {
         if ($this->input->post()) {
             $id_layanan = $this->input->post('id_layanan', TRUE);
             $id_dokter  = $this->input->post('id_dokter', TRUE);
             $tanggal    = $this->input->post('tanggal_antrean', TRUE);
 
-            // Cek apakah hari ini sudah terdaftar di poli yang sama
             $this->db->where('id_pasien', $this->pasien_id);
             $this->db->where('tanggal_antrean', $tanggal);
             $this->db->where('id_layanan', $id_layanan);
-            $ada = $this->db->get('antrean')->row();
-
-            if ($ada) {
+            if ($this->db->get('antrean')->row()) {
                 $this->session->set_flashdata('error', 'Anda sudah terdaftar di poliklinik ini untuk tanggal tersebut.');
                 redirect('portal_pasien/buat_antrean');
             }
 
-            // Hitung nomor antrean berikutnya
-            $this->db->where('id_layanan', $id_layanan);
-            $this->db->where('tanggal_antrean', $tanggal);
-            $nomor_baru = $this->db->count_all_results('antrean') + 1;
-
-            $data = [
+            $nomor_baru = $this->Antrean_model->generate_nomor($id_layanan, $tanggal);
+            $this->db->insert('antrean', [
                 'no_antrean'      => $nomor_baru,
                 'id_pasien'       => $this->pasien_id,
                 'id_dokter'       => $id_dokter,
                 'id_layanan'      => $id_layanan,
                 'tanggal_antrean' => $tanggal,
                 'keluhan_awal'    => $this->input->post('keluhan_awal', TRUE),
-                'status'          => 'Menunggu'
-            ];
+                'status'          => 'Menunggu',
+            ]);
 
-            $this->db->insert('antrean', $data);
-            $this->session->set_flashdata('success', 'Pendaftaran antrean berhasil! Nomor Antrean Anda: ' . $nomor_baru);
+            $this->session->set_flashdata('success', 'Nomor antrean Anda: ' . $nomor_baru);
             redirect('portal_pasien');
         }
 
-        $data['title'] = 'Ambil Antrean Poli';
-        $data['layanan'] = $this->Layanan_model->get_all();
-        $this->load->view('layouts/template', ['view_name' => 'portal_pasien/buat_antrean', 'view_data' => $data]);
+        $this->_render('portal_pasien/buat_antrean', [
+            'title'   => 'Daftar Antrean',
+            'layanan' => $this->Layanan_model->get_all(),
+        ]);
     }
 
-    // AJAX endpoint penyaring dokter
     public function get_dokter($id_layanan) {
         $this->db->select('id_dokter, nama_dokter, spesialisasi');
         $this->db->where('id_layanan', $id_layanan);
-        $dokter = $this->db->get('dokter')->result();
-        echo json_encode($dokter);
+        echo json_encode($this->db->get('dokter')->result());
     }
 
-    // ==========================================
-    // MENU BARU: MONITOR ANTREAN REAL-TIME
-    // ==========================================
     public function antrean_saat_ini() {
-        $data['title'] = 'Papan Monitor Antrean Live';
-        $data['layanan'] = $this->Layanan_model->get_all();
-        $this->load->view('layouts/template', ['view_name' => 'portal_pasien/antrean_saat_ini', 'view_data' => $data]);
+        $this->_render('portal_pasien/antrean_saat_ini', [
+            'title'   => 'Monitor Antrean',
+            'layanan' => $this->Layanan_model->get_all(),
+        ]);
     }
 
-    // Endpoint API internal untuk mensuplai data real-time ke AJAX JS
     public function get_active_queues_ajax() {
         $tanggal_hari_ini = date('Y-m-d');
-        
-        // Ambil semua poliklinik/layanan yang terdaftar
         $layanan = $this->Layanan_model->get_all();
         $result = [];
 
         foreach ($layanan as $l) {
-            // 1. Cari nomor antrean yang STATUSNYA 'Diperiksa' hari ini (panggilan aktif)
             $this->db->select('no_antrean, dokter.nama_dokter');
             $this->db->from('antrean');
             $this->db->join('dokter', 'dokter.id_dokter = antrean.id_dokter');
             $this->db->where('antrean.id_layanan', $l->id_layanan);
             $this->db->where('antrean.tanggal_antrean', $tanggal_hari_ini);
             $this->db->where('antrean.status', 'Diperiksa');
-            $this->db->order_by('antrean.no_antrean', 'DESC'); // Yang terbaru dipanggil
+            $this->db->order_by('antrean.no_antrean', 'DESC');
             $active = $this->db->get()->row();
 
-            // 2. Hitung jumlah sisa antrean yang masih mengantre (status 'Menunggu')
             $this->db->where('id_layanan', $l->id_layanan);
             $this->db->where('tanggal_antrean', $tanggal_hari_ini);
             $this->db->where('status', 'Menunggu');
             $waiting_count = $this->db->count_all_results('antrean');
 
-            // 3. Ambil nomor antrean pendaftaran terakhir hari ini
+            $this->db->select('no_antrean');
             $this->db->where('id_layanan', $l->id_layanan);
             $this->db->where('tanggal_antrean', $tanggal_hari_ini);
             $this->db->order_by('no_antrean', 'DESC');
@@ -162,19 +224,14 @@ class Portal_pasien extends MY_Controller {
                 'dokter_bertugas'  => $active ? $active->nama_dokter : 'Menunggu Dokter',
                 'sedang_diperiksa' => $active ? $active->no_antrean : '-',
                 'sisa_antrean'     => $waiting_count,
-                'antrean_terakhir' => $last_registered ? $last_registered->no_antrean : 0
+                'antrean_terakhir' => $last_registered ? $last_registered->no_antrean : 0,
             ];
         }
 
         echo json_encode($result);
     }
 
-    // ==========================================
-    // RIWAYAT REKAM MEDIS & SOAP
-    // ==========================================
     public function rekam_medis() {
-        $data['title'] = 'Riwayat Pemeriksaan Medis';
-        
         $this->db->select('rekam_medis.*, dokter.nama_dokter, layanan.nama_layanan');
         $this->db->from('rekam_medis');
         $this->db->join('dokter', 'dokter.id_dokter = rekam_medis.id_dokter');
@@ -183,15 +240,12 @@ class Portal_pasien extends MY_Controller {
         $this->db->order_by('rekam_medis.tanggal_periksa', 'DESC');
         $data['rekam_medis'] = $this->db->get()->result();
 
-        $this->load->view('layouts/template', ['view_name' => 'portal_pasien/rekam_medis', 'view_data' => $data]);
+        $this->_render('portal_pasien/rekam_medis', [
+            'title' => 'Rekam Medis',
+        ] + $data);
     }
 
-    // ==========================================
-    // RIWAYAT TRANSAKSI & BILLING
-    // ==========================================
     public function billing() {
-        $data['title'] = 'Riwayat Transaksi Keuangan';
-
         $this->db->select('billing.*, users.username as nama_kasir');
         $this->db->from('billing');
         $this->db->join('users', 'users.id_user = billing.id_kasir', 'left');
@@ -199,19 +253,24 @@ class Portal_pasien extends MY_Controller {
         $this->db->order_by('billing.created_at', 'DESC');
         $data['billing'] = $this->db->get()->result();
 
-        $this->load->view('layouts/template', ['view_name' => 'portal_pasien/billing', 'view_data' => $data]);
+        $this->_render('portal_pasien/billing', [
+            'title' => 'Tagihan',
+        ] + $data);
     }
 
     public function invoice($id) {
         $billing = $this->Billing_model->get_by_id($id);
         if (!$billing || $billing->id_pasien != $this->pasien_id) {
-            show_error('Akses Terlarang: Anda tidak diizinkan melihat invoice milik pasien lain.', 403, 'Akses Ditolak');
+            show_error('Akses ditolak.', 403);
         }
 
-        $data['title'] = 'Kuitansi Pembayaran';
-        $data['b'] = $billing;
-        $data['detail_resep'] = $this->Resep_model->get_detail_resep($billing->id_resep);
-
-        $this->load->view('layouts/template', ['view_name' => 'billing/invoice', 'view_data' => $data]);
+        $this->_render('portal_pasien/invoice', [
+            'title'          => 'Kuitansi',
+            'hide_bottom_nav'=> true,
+            'show_back'      => true,
+            'back_url'       => base_url('portal_pasien/billing'),
+            'b'              => $billing,
+            'detail_resep'   => $this->Resep_model->get_detail_resep($billing->id_resep),
+        ]);
     }
 }

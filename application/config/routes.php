@@ -89,6 +89,8 @@ $route['antrean'] = 'antrean/index';
 $route['antrean/create'] = 'antrean/create';
 $route['antrean/update_status/(:num)/(:any)'] = 'antrean/update_status/$1/$2';
 $route['antrean/get_dokter_by_layanan/(:num)'] = 'antrean/get_dokter_by_layanan/$1';
+$route['antrean/panggil_selanjutnya'] = 'antrean/panggil_selanjutnya';
+$route['antrean/panggil_ulang/(:num)'] = 'antrean/panggil_ulang/$1';
 
 // ==========================================
 // LAPORAN
@@ -117,6 +119,7 @@ $route['portal_pasien/rekam_medis']     = 'portal_pasien/rekam_medis';
 $route['portal_pasien/billing']         = 'portal_pasien/billing';
 $route['portal_pasien/invoice/(:num)']  = 'portal_pasien/invoice/$1';
 $route['portal_pasien/antrean_saat_ini'] = 'portal_pasien/antrean_saat_ini';
+$route['portal_pasien/status_antrean_ajax'] = 'portal_pasien/status_antrean_ajax';
 
 
 $route['live_board'] = 'live_board/index';

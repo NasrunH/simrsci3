@@ -1,94 +1,89 @@
-<div class="max-w-xl mx-auto">
-    <div class="flex items-center gap-3 mb-6">
-        <a href="<?= base_url('portal_pasien') ?>" class="text-gray-500 hover:text-primary transition-colors">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-        </a>
-        <h1 class="text-2xl font-bold text-gray-800">Ambil Nomor Antrean</h1>
-    </div>
+<p class="text-sm text-gray-500 mb-4">Isi formulir untuk mengambil nomor antrean poliklinik hari ini.</p>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8">
-        <form action="<?= base_url('portal_pasien/buat_antrean') ?>" method="POST">
-            
-            <div class="mb-5">
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Tanggal Rencana Berobat <span class="text-red-500">*</span></label>
-                <input type="date" name="tanggal_antrean" value="<?= date('Y-m-d') ?>" min="<?= date('Y-m-d') ?>" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-primary focus:border-primary text-sm font-bold" required>
-            </div>
+<div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
+    <form action="<?= base_url('portal_pasien/buat_antrean') ?>" method="POST" class="space-y-5">
 
-            <div class="mb-5">
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Pilih Poliklinik <span class="text-red-500">*</span></label>
-                <select name="id_layanan" id="layananSelector" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-primary focus:border-primary text-sm select2" required>
-                    <option value="" disabled selected>-- Pilih Poli --</option>
-                    <?php foreach($layanan as $l): ?>
-                        <option value="<?= $l->id_layanan ?>"><?= htmlspecialchars($l->nama_layanan) ?> (Biaya: Rp <?= number_format($l->tarif, 0, ',', '.') ?>)</option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+        <div>
+            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Tanggal Berobat</label>
+            <input type="date" name="tanggal_antrean" value="<?= date('Y-m-d') ?>" min="<?= date('Y-m-d') ?>"
+                class="w-full px-4 py-3.5 border border-gray-200 rounded-xl text-base focus:ring-2 focus:ring-primary/30 focus:border-primary bg-gray-50" required>
+        </div>
 
-            <div class="mb-5">
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Pilih Dokter Spesialis <span class="text-red-500">*</span></label>
-                <select name="id_dokter" id="dokterSelector" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-primary focus:border-primary text-sm bg-gray-50 select2" disabled required>
-                    <option value="" disabled selected>-- Silakan Pilih Poliklinik Dahulu --</option>
-                </select>
-            </div>
+        <div>
+            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Poliklinik</label>
+            <select name="id_layanan" id="layananSelector"
+                class="w-full portal-select" required>
+                <option value="" disabled selected>Pilih poliklinik</option>
+                <?php foreach ($layanan as $l): ?>
+                <option value="<?= $l->id_layanan ?>">
+                    <?= htmlspecialchars($l->nama_layanan) ?> — Rp <?= number_format($l->tarif, 0, ',', '.') ?>
+                </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
 
-            <div class="mb-6">
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Keluhan yang Dirasakan <span class="text-red-500">*</span></label>
-                <textarea name="keluhan_awal" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-primary focus:border-primary text-sm" placeholder="Tulis keluhan secara ringkas, misal: Demam tinggi 3 hari dan mual." required></textarea>
-            </div>
+        <div>
+            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Dokter</label>
+            <select name="id_dokter" id="dokterSelector" class="w-full portal-select bg-gray-100" disabled required>
+                <option value="" disabled selected>Pilih poli terlebih dahulu</option>
+            </select>
+        </div>
 
-            <div class="pt-5 border-t border-gray-100">
-                <button type="submit" class="w-full bg-primary hover:bg-green-700 text-white font-bold py-3 rounded-xl transition-all shadow-md shadow-primary/20 flex justify-center items-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    Selesaikan & Ambil Tiket
-                </button>
-            </div>
+        <div>
+            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Keluhan</label>
+            <textarea name="keluhan_awal" rows="4"
+                class="w-full px-4 py-3.5 border border-gray-200 rounded-xl text-base focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
+                placeholder="Contoh: Demam 3 hari, batuk berdahak"
+                required></textarea>
+        </div>
 
-        </form>
-    </div>
+        <button type="submit" class="w-full bg-primary active:bg-primary-hover text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/25 flex items-center justify-center gap-2 text-base min-h-[52px]">
+            <i data-lucide="check-circle" class="w-5 h-5"></i>
+            Ambil Nomor Antrean
+        </button>
+    </form>
+</div>
+
+<div class="mt-4 bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3">
+    <i data-lucide="info" class="w-5 h-5 text-blue-600 shrink-0 mt-0.5"></i>
+    <p class="text-xs text-blue-800 leading-relaxed">Hadir <strong>15 menit</strong> sebelum giliran. Bawa KTP dan kartu BPJS jika ada.</p>
 </div>
 
 <style>
-    .select2-container { width: 100% !important; display: block !important; }
-    .select2-container--default .select2-selection--single {
-        border-color: #D1D5DB !important; border-radius: 0.75rem !important; height: 46px !important; display: flex !important; align-items: center !important;
-    }
-    .select2-container--default .select2-selection--single .select2-selection__rendered { padding-left: 1rem !important; }
-    .select2-container--default .select2-selection--single .select2-selection__arrow { height: 44px !important; right: 10px !important; }
+.portal-select { padding: 0.875rem 1rem; border: 1px solid #E5E7EB; border-radius: 0.75rem; font-size: 1rem; width: 100%; }
+.select2-container { width: 100% !important; }
+.select2-container--default .select2-selection--single {
+    border: 1px solid #E5E7EB !important; border-radius: 0.75rem !important;
+    min-height: 52px !important; display: flex !important; align-items: center !important;
+    padding: 0 0.5rem !important; font-size: 1rem !important;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow { height: 100% !important; right: 12px !important; }
 </style>
 
 <script>
-    $(document).ready(function() {
-        $('#layananSelector').select2({ width: '100%' });
-        $('#dokterSelector').select2({ width: '100%', placeholder: '-- Silakan Pilih Poliklinik Dahulu --' });
+$(function () {
+    $('#layananSelector, #dokterSelector').select2({ width: '100%' });
 
-        $('#layananSelector').on('change', function() {
-            var id_layanan = $(this).val();
-            var dokterSelector = $('#dokterSelector');
-
-            if (id_layanan) {
-                dokterSelector.prop('disabled', false).empty().append('<option value="" disabled selected>Memuat dokter...</option>').trigger('change');
-
-                $.ajax({
-                    url: '<?= base_url("portal_pasien/get_dokter/") ?>' + id_layanan,
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function(data) {
-                        dokterSelector.empty();
-                        if (data.length > 0) {
-                            dokterSelector.append('<option value="" disabled selected>-- Pilih Dokter --</option>');
-                            $.each(data, function(key, value) {
-                                var option = new Option(value.nama_dokter + ' (' + value.spesialisasi + ')', value.id_dokter, false, false);
-                                dokterSelector.append(option);
-                            });
-                        } else {
-                            dokterSelector.append('<option value="" disabled selected>Tidak ada dokter yang bertugas di poli ini</option>');
-                        }
-                        dokterSelector.trigger('change');
-                    }
+    $('#layananSelector').on('change', function () {
+        var id = $(this).val();
+        var $doc = $('#dokterSelector');
+        if (!id) {
+            $doc.prop('disabled', true).empty().append('<option disabled selected>Pilih poli terlebih dahulu</option>').trigger('change');
+            return;
+        }
+        $doc.prop('disabled', false).empty().append('<option disabled selected>Memuat...</option>').trigger('change');
+        $.getJSON('<?= base_url('portal_pasien/get_dokter/') ?>' + id, function (data) {
+            $doc.empty();
+            if (data.length) {
+                $doc.append('<option disabled selected>Pilih dokter</option>');
+                data.forEach(function (v) {
+                    $doc.append(new Option(v.nama_dokter + ' (' + v.spesialisasi + ')', v.id_dokter));
                 });
             } else {
-                dokterSelector.prop('disabled', true).empty().append('<option value="" disabled selected>-- Silakan Pilih Poliklinik Dahulu --</option>').trigger('change');
+                $doc.append('<option disabled selected>Tidak ada dokter</option>');
             }
+            $doc.trigger('change');
         });
     });
+});
 </script>

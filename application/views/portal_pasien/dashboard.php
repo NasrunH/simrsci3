@@ -1,95 +1,180 @@
-<div class="max-w-5xl mx-auto space-y-6">
-    
-    <!-- BANNER SELAMAT DATANG -->
-    <div class="bg-gradient-to-r from-primary to-green-600 rounded-2xl shadow-md p-6 sm:p-8 text-white">
-        <span class="text-xs font-bold uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">Portal Pasien SIMRS</span>
-        <h1 class="text-2xl sm:text-3xl font-black mt-3">Halo, <?= htmlspecialchars($pasien->nama_lengkap) ?>!</h1>
-        <p class="text-white/80 text-sm mt-1">Gunakan layanan mandiri SIMRS Medika untuk berobat secara praktis tanpa antre manual.</p>
-        <div class="flex flex-wrap gap-3 mt-6">
-            <a href="<?= base_url('portal_pasien/buat_antrean') ?>" class="bg-white hover:bg-gray-100 text-primary px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                Daftar Berobat Sekarang
-            </a>
-            <a href="<?= base_url('portal_pasien/rekam_medis') ?>" class="bg-primary-hover hover:bg-primary border border-white/20 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all">
-                Riwayat Rekam Medis
-            </a>
+<?php
+$first = strtoupper(substr($pasien->nama_lengkap, 0, 1));
+$status_map = [
+    'Menunggu'  => ['bg' => 'bg-amber-100 text-amber-800', 'label' => 'Menunggu Panggilan'],
+    'Diperiksa' => ['bg' => 'bg-blue-100 text-blue-800', 'label' => 'Sedang Dipanggil'],
+    'Selesai'   => ['bg' => 'bg-green-100 text-green-800', 'label' => 'Selesai'],
+    'Batal'     => ['bg' => 'bg-red-100 text-red-800', 'label' => 'Dibatalkan'],
+];
+?>
+
+<!-- Kartu identitas -->
+<div class="bg-gradient-to-br from-primary via-green-600 to-teal-600 rounded-2xl p-5 text-white shadow-lg mb-4 relative overflow-hidden">
+    <div class="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full"></div>
+    <p class="text-emerald-100 text-xs font-medium">Selamat datang</p>
+    <h2 class="text-xl font-black mt-1 leading-tight"><?= htmlspecialchars($pasien->nama_lengkap) ?></h2>
+    <p class="text-emerald-100/90 text-xs font-mono mt-1"><?= htmlspecialchars($pasien->no_rekam_medis) ?></p>
+</div>
+
+<!-- Antrean hari ini (live) -->
+<div id="queueWidget" class="mb-4">
+    <?php if (!empty($antrean_hari_ini)):
+        $st = $status_map[$antrean_hari_ini->status] ?? $status_map['Menunggu'];
+    ?>
+    <div class="bg-white rounded-2xl border-2 border-primary/20 shadow-sm overflow-hidden">
+        <div class="bg-primary/5 px-4 py-3 flex items-center justify-between border-b border-primary/10">
+            <div class="flex items-center gap-2">
+                <span class="relative flex h-2.5 w-2.5">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
+                </span>
+                <span class="text-xs font-bold text-primary uppercase tracking-wide">Antrean Hari Ini</span>
+            </div>
+            <span id="queueStatusBadge" class="<?= $st['bg'] ?> text-[10px] font-bold px-2.5 py-1 rounded-full"><?= $st['label'] ?></span>
+        </div>
+        <div class="p-4 flex items-center gap-4">
+            <div id="queueNumber" class="w-20 h-20 rounded-2xl bg-primary text-white flex items-center justify-center font-mono font-black text-3xl shadow-lg shrink-0">
+                <?= (int)$antrean_hari_ini->no_antrean ?>
+            </div>
+            <div class="min-w-0 flex-1">
+                <p class="font-bold text-gray-800 truncate"><?= htmlspecialchars($antrean_hari_ini->nama_layanan ?? 'Poliklinik') ?></p>
+                <p class="text-sm text-gray-500 truncate">Dr. <?= htmlspecialchars($antrean_hari_ini->nama_dokter) ?></p>
+                <p id="queueHint" class="text-xs text-amber-700 font-semibold mt-2">
+                    <?php if ($antrean_hari_ini->status === 'Menunggu'): ?>
+                        <?= (int)$antrean_di_depan ?> orang di depan Anda
+                    <?php elseif ($antrean_hari_ini->status === 'Diperiksa'): ?>
+                        Silakan menuju ruang pemeriksaan
+                    <?php else: ?>
+                        Status: <?= htmlspecialchars($antrean_hari_ini->status) ?>
+                    <?php endif; ?>
+                </p>
+            </div>
+        </div>
+        <div class="px-4 pb-4 grid grid-cols-2 gap-2">
+            <a href="<?= base_url('portal_pasien/antrean_saat_ini') ?>" class="bg-gray-100 text-gray-700 text-center py-2.5 rounded-xl text-xs font-bold">Monitor Live</a>
+            <button type="button" id="btnRefreshQueue" class="bg-primary/10 text-primary py-2.5 rounded-xl text-xs font-bold">Perbarui</button>
         </div>
     </div>
-
-    <!-- ANTREAN HARI INI (REAL-TIME STATUS) -->
-    <?php if(!empty($antrean_hari_ini)): ?>
-    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-6 shadow-sm">
-        <h2 class="text-sm font-bold text-amber-800 uppercase tracking-wider mb-4 flex items-center gap-2">
-            <span class="relative flex h-3.5 w-3.5">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-500"></span>
-            </span>
-            Antrean Anda Hari Ini (<?= date('d M Y') ?>)
-        </h2>
-        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div class="flex items-center gap-4">
-                <div class="bg-amber-600 text-white font-mono font-black text-4xl w-20 h-20 rounded-xl flex items-center justify-center shadow-md">
-                    <?= $antrean_hari_ini->no_antrean ?>
-                </div>
-                <div>
-                    <span class="bg-amber-200 text-amber-800 px-2.5 py-0.5 rounded text-xs font-bold uppercase"><?= $antrean_hari_ini->status ?></span>
-                    <h3 class="text-xl font-bold text-gray-800 mt-1"><?= htmlspecialchars($antrean_hari_ini->nama_layanan ?? 'Poliklinik') ?></h3>
-                    <p class="text-sm text-gray-500"><?= htmlspecialchars($antrean_hari_ini->nama_dokter) ?></p>
-                </div>
-            </div>
-            
-            <div class="text-left md:text-right bg-white p-4 rounded-xl border border-amber-100 w-full md:w-auto">
-                <p class="text-xs text-gray-400 font-semibold uppercase">Estimasi Kedatangan</p>
-                <p class="text-lg font-bold text-gray-800">Pukul 09:00 - 11:30</p>
-                <p class="text-xs text-amber-600 mt-1">*Mohon hadir 15 menit sebelum estimasi.</p>
-            </div>
+    <?php else: ?>
+    <div class="bg-white rounded-2xl border border-dashed border-gray-300 p-6 text-center">
+        <div class="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <i data-lucide="ticket" class="w-7 h-7 text-gray-400"></i>
         </div>
+        <p class="text-sm font-semibold text-gray-700">Belum ada antrean hari ini</p>
+        <p class="text-xs text-gray-400 mt-1 mb-4">Daftar kunjungan untuk mengambil nomor antrean</p>
+        <a href="<?= base_url('portal_pasien/buat_antrean') ?>" class="inline-flex items-center gap-2 bg-primary text-white font-bold px-5 py-3 rounded-xl text-sm shadow-md">
+            <i data-lucide="plus" class="w-4 h-4"></i> Daftar Sekarang
+        </a>
     </div>
     <?php endif; ?>
-
-    <!-- STATISTIK RINGKAS -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
-            <div class="p-4 bg-blue-50 text-blue-600 rounded-lg">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            </div>
-            <div>
-                <span class="text-gray-400 text-xs font-semibold uppercase">Total Kunjungan Medis</span>
-                <p class="text-2xl font-bold text-gray-800"><?= $total_kunjungan ?> Kali</p>
-            </div>
-        </div>
-
-        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
-            <div class="p-4 bg-red-50 text-red-600 rounded-lg">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            </div>
-            <div>
-                <span class="text-gray-400 text-xs font-semibold uppercase">Tagihan Belum Dibayar</span>
-                <p class="text-2xl font-bold text-gray-800"><?= $tagihan_aktif ?> Invoice</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- TIGA KUNJUNGAN TERAKHIR -->
-    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-        <h2 class="text-lg font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2">3 Kunjungan Medis Terakhir Anda</h2>
-        <div class="space-y-4">
-            <?php if(!empty($kunjungan_terakhir)): ?>
-                <?php foreach($kunjungan_terakhir as $k): ?>
-                <div class="flex justify-between items-start p-4 rounded-lg bg-gray-50 border border-gray-100">
-                    <div>
-                        <span class="text-xs text-primary font-mono font-semibold"><?= date('d M Y', strtotime($k->tanggal_periksa)) ?></span>
-                        <h3 class="font-bold text-gray-800 mt-1"><?= htmlspecialchars($k->diagnosa ?? 'Pemeriksaan Kesehatan') ?></h3>
-                        <p class="text-xs text-gray-500 mt-0.5">Dokter: <?= htmlspecialchars($k->nama_dokter) ?></p>
-                        <p class="text-xs text-gray-600 mt-2 bg-white px-2 py-1 rounded inline-block border border-gray-100">"<?= htmlspecialchars($k->keluhan_utama ?? '') ?>"</p>
-                    </div>
-                    <a href="<?= base_url('portal_pasien/rekam_medis') ?>" class="text-xs text-primary hover:underline font-bold">Lihat Detail SOAP →</a>
-                </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <p class="text-center py-6 text-gray-400 text-sm">Belum ada riwayat rekam medis terdokumentasi.</p>
-            <?php endif; ?>
-        </div>
-    </div>
-
 </div>
+
+<!-- Quick actions -->
+<div class="grid grid-cols-2 gap-3 mb-4">
+    <a href="<?= base_url('portal_pasien/buat_antrean') ?>" class="bg-white rounded-xl p-4 border border-gray-100 shadow-sm flex flex-col items-center text-center active:scale-[0.98] transition-transform">
+        <div class="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-2">
+            <i data-lucide="calendar-plus" class="w-5 h-5"></i>
+        </div>
+        <span class="text-xs font-bold text-gray-800">Daftar Poli</span>
+    </a>
+    <a href="<?= base_url('portal_pasien/antrean_saat_ini') ?>" class="bg-white rounded-xl p-4 border border-gray-100 shadow-sm flex flex-col items-center text-center active:scale-[0.98] transition-transform">
+        <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-2">
+            <i data-lucide="radio" class="w-5 h-5"></i>
+        </div>
+        <span class="text-xs font-bold text-gray-800">Monitor Antrean</span>
+    </a>
+    <a href="<?= base_url('portal_pasien/rekam_medis') ?>" class="bg-white rounded-xl p-4 border border-gray-100 shadow-sm flex flex-col items-center text-center active:scale-[0.98] transition-transform">
+        <div class="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2">
+            <i data-lucide="file-text" class="w-5 h-5"></i>
+        </div>
+        <span class="text-xs font-bold text-gray-800">Rekam Medis</span>
+    </a>
+    <a href="<?= base_url('portal_pasien/billing') ?>" class="bg-white rounded-xl p-4 border border-gray-100 shadow-sm flex flex-col items-center text-center relative active:scale-[0.98] transition-transform">
+        <?php if ($tagihan_aktif > 0): ?>
+        <span class="absolute top-2 right-2 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center"><?= (int)$tagihan_aktif ?></span>
+        <?php endif; ?>
+        <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-2">
+            <i data-lucide="wallet" class="w-5 h-5"></i>
+        </div>
+        <span class="text-xs font-bold text-gray-800">Tagihan</span>
+    </a>
+</div>
+
+<!-- Stat ringkas -->
+<div class="grid grid-cols-2 gap-3 mb-4">
+    <div class="bg-white rounded-xl p-4 border border-gray-100">
+        <p class="text-[10px] text-gray-400 font-bold uppercase">Kunjungan</p>
+        <p class="text-2xl font-black text-gray-800 mt-1"><?= (int)$total_kunjungan ?></p>
+    </div>
+    <div class="bg-white rounded-xl p-4 border border-gray-100">
+        <p class="text-[10px] text-gray-400 font-bold uppercase">Tagihan Aktif</p>
+        <p class="text-2xl font-black <?= $tagihan_aktif ? 'text-amber-600' : 'text-gray-800' ?> mt-1"><?= (int)$tagihan_aktif ?></p>
+    </div>
+</div>
+
+<!-- Kunjungan terakhir -->
+<div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-2">
+    <div class="flex items-center justify-between mb-3">
+        <h3 class="font-bold text-gray-800 text-sm">Kunjungan Terakhir</h3>
+        <a href="<?= base_url('portal_pasien/rekam_medis') ?>" class="text-xs font-bold text-primary">Semua</a>
+    </div>
+    <?php if (!empty($kunjungan_terakhir)): ?>
+    <div class="space-y-2">
+        <?php foreach ($kunjungan_terakhir as $k): ?>
+        <div class="bg-gray-50 rounded-xl p-3 border border-gray-100">
+            <p class="text-[10px] text-primary font-mono font-semibold"><?= date('d M Y', strtotime($k->tanggal_periksa)) ?></p>
+            <p class="font-bold text-gray-800 text-sm mt-0.5 line-clamp-1"><?= htmlspecialchars($k->diagnosa ?? 'Pemeriksaan') ?></p>
+            <p class="text-xs text-gray-500">Dr. <?= htmlspecialchars($k->nama_dokter) ?></p>
+        </div>
+        <?php endforeach; ?>
+    </div>
+    <?php else: ?>
+    <p class="text-center text-gray-400 text-xs py-6">Belum ada riwayat medis.</p>
+    <?php endif; ?>
+</div>
+
+<?php if (!empty($antrean_hari_ini)): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const statusLabels = {
+        'Menunggu': ['bg-amber-100 text-amber-800', 'Menunggu Panggilan'],
+        'Diperiksa': ['bg-blue-100 text-blue-800', 'Sedang Dipanggil'],
+        'Selesai': ['bg-green-100 text-green-800', 'Selesai'],
+        'Batal': ['bg-red-100 text-red-800', 'Dibatalkan'],
+    };
+
+    async function refreshQueue() {
+        try {
+            const res = await fetch('<?= base_url('portal_pasien/status_antrean_ajax') ?>');
+            const d = await res.json();
+            if (!d.has_queue) return;
+
+            const badge = document.getElementById('queueStatusBadge');
+            const hint = document.getElementById('queueHint');
+            const num = document.getElementById('queueNumber');
+            if (num) num.textContent = d.no_antrean;
+
+            const st = statusLabels[d.status] || statusLabels['Menunggu'];
+            if (badge) {
+                badge.className = st[0] + ' text-[10px] font-bold px-2.5 py-1 rounded-full';
+                badge.textContent = st[1];
+            }
+            if (hint) {
+                if (d.status === 'Menunggu') {
+                    hint.textContent = d.di_depan + ' orang di depan Anda';
+                    hint.className = 'text-xs text-amber-700 font-semibold mt-2';
+                } else if (d.status === 'Diperiksa') {
+                    hint.textContent = 'Silakan menuju ruang pemeriksaan';
+                    hint.className = 'text-xs text-blue-700 font-semibold mt-2';
+                } else {
+                    hint.textContent = 'Status: ' + d.status;
+                }
+            }
+        } catch (e) { /* silent */ }
+    }
+
+    document.getElementById('btnRefreshQueue')?.addEventListener('click', refreshQueue);
+    setInterval(refreshQueue, 15000);
+});
+</script>
+<?php endif; ?>
