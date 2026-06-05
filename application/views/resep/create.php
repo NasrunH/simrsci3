@@ -20,9 +20,13 @@
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Pasien Penerima Resep <span class="text-red-500">*</span></label>
                     <select name="id_pasien" class="w-full px-4 py-2 border border-gray-300 rounded-lg select2" required>
-                        <option value="" disabled selected>Ketik Nama atau No RM Pasien...</option>
+                        <!-- PHP 8.1 Fix: Kosongkan 'selected' default jika ada parameter $selected_pasien dari URL -->
+                        <option value="" disabled <?= empty($selected_pasien) ? 'selected' : '' ?>>Ketik Nama atau No RM Pasien...</option>
                         <?php foreach($pasien as $p): ?>
-                            <option value="<?= $p->id_pasien ?>"><?= $p->no_rekam_medis ?> - <?= htmlspecialchars($p->nama_lengkap) ?></option>
+                            <!-- Pre-select Pasien jika id cocok dengan selected_pasien dari URL -->
+                            <option value="<?= $p->id_pasien ?>" <?= (isset($selected_pasien) && $selected_pasien == $p->id_pasien) ? 'selected' : '' ?>>
+                                <?= $p->no_rekam_medis ?> - <?= htmlspecialchars($p->nama_lengkap) ?>
+                            </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -32,10 +36,13 @@
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Dokter Pemeriksa <span class="text-red-500">*</span></label>
                     <select name="id_dokter" class="w-full px-4 py-2 border border-gray-300 rounded-lg select2" required>
-                        <option value="" disabled selected>Ketik Nama Dokter...</option>
+                        <option value="" disabled <?= empty($selected_dokter) ? 'selected' : '' ?>>Ketik Nama Dokter...</option>
                         <?php if(!empty($dokters)): ?>
                             <?php foreach($dokters as $d): ?>
-                                <option value="<?= $d->id_dokter ?>"><?= htmlspecialchars($d->nama_dokter) ?> (<?= htmlspecialchars($d->spesialisasi) ?>)</option>
+                                <!-- Pre-select Dokter jika id cocok dengan selected_dokter dari URL -->
+                                <option value="<?= $d->id_dokter ?>" <?= (isset($selected_dokter) && $selected_dokter == $d->id_dokter) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($d->nama_dokter) ?> (<?= htmlspecialchars($d->spesialisasi) ?>)
+                                </option>
                             <?php endforeach; ?>
                         <?php else: ?>
                             <option value="" disabled>Belum ada data dokter di sistem.</option>
@@ -46,7 +53,7 @@
                     <!-- Jika Dokter yang login, tampilkan info saja (Readonly) -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Dokter Pemeriksa</label>
-                        <div class="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-600 font-medium">
+                        <div class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-600 font-medium text-sm">
                             <span class="text-green-600 font-bold">✓</span> Akun Dokter Anda (Terhubung Otomatis)
                         </div>
                     </div>
@@ -72,7 +79,7 @@
                 <table class="w-full text-left border-collapse" id="tableObat">
                     <thead>
                         <tr class="text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200">
-                            <th class="py-2 px-2 font-semibold min-w-[200px]">Pilih Obat</th>
+                            <th class="py-2 px-2 font-semibold w-[300px] min-w-[300px]">Pilih Obat</th>
                             <th class="py-2 px-2 font-semibold w-24">Stok</th>
                             <th class="py-2 px-2 font-semibold w-32">Harga (Rp)</th>
                             <th class="py-2 px-2 font-semibold w-24">Qty</th>
@@ -102,6 +109,38 @@
     </form>
 </div>
 
+<!-- ============================================== -->
+<!-- STYLE FIX UNTUK SELECT2 DI DALAM GRID/TABLE TAILWIND -->
+<!-- ============================================== -->
+<style>
+    /* Paksa container Select2 untuk mengambil lebar penuh kontainer */
+    .select2-container {
+        width: 100% !important;
+        display: block !important;
+    }
+    
+    /* Percantik tampilan kotak input Select2 agar serasi dengan Tailwind */
+    .select2-container--default .select2-selection--single {
+        border-color: #D1D5DB !important; /* border-gray-300 */
+        border-radius: 0.5rem !important; /* rounded-lg */
+        height: 42px !important;
+        display: flex !important;
+        align-items: center !important;
+        background-color: #FFF !important;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        color: #1F2937 !important; /* text-gray-800 */
+        font-size: 0.875rem !important; /* text-sm */
+        padding-left: 1rem !important;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 40px !important;
+        right: 8px !important;
+    }
+</style>
+
 <!-- DATA OBAT DARI PHP KE JAVASCRIPT -->
 <script>
     const daftarObat = <?= json_encode($obat) ?>;
@@ -122,25 +161,25 @@
 
             let tr = `
                 <tr class="border-b border-gray-100 baris-obat">
-                    <td class="py-2 px-2">
-                        <select name="id_obat[]" class="w-full text-sm border border-gray-300 rounded-lg select-obat select2-dynamic" required>
+                    <td class="py-2 px-2 w-[300px]">
+                        <select name="id_obat[]" class="w-full select-obat select2-dynamic" required>
                             ${options}
                         </select>
                     </td>
                     <td class="py-2 px-2">
-                        <input type="text" class="w-full text-sm bg-gray-50 border border-gray-300 rounded-lg text-center input-stok" readonly tabindex="-1">
+                        <input type="text" class="w-full text-sm bg-gray-50 border border-gray-300 rounded-lg text-center py-2 input-stok" readonly tabindex="-1">
                     </td>
                     <td class="py-2 px-2">
-                        <input type="text" class="w-full text-sm bg-gray-50 border border-gray-300 rounded-lg text-right input-harga" readonly tabindex="-1">
+                        <input type="text" class="w-full text-sm bg-gray-50 border border-gray-300 rounded-lg text-right py-2 input-harga" readonly tabindex="-1">
                     </td>
                     <td class="py-2 px-2">
-                        <input type="number" name="jumlah[]" min="1" value="1" class="w-full text-sm border border-gray-300 rounded-lg text-center input-qty" required>
+                        <input type="number" name="jumlah[]" min="1" value="1" class="w-full text-sm border border-gray-300 rounded-lg text-center py-2 input-qty" required>
                     </td>
                     <td class="py-2 px-2">
                         <input type="text" name="aturan_pakai[]" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2" placeholder="misal: 3x1 Sesudah Makan" required>
                     </td>
                     <td class="py-2 px-2">
-                        <input type="text" class="w-full text-sm bg-gray-50 border border-gray-300 rounded-lg text-right font-bold text-gray-700 input-subtotal" value="0" readonly tabindex="-1">
+                        <input type="text" class="w-full text-sm bg-gray-50 border border-gray-300 rounded-lg text-right py-2 font-bold text-gray-700 input-subtotal" value="0" readonly tabindex="-1">
                     </td>
                     <td class="py-2 px-2 text-center">
                         <button type="button" class="text-red-500 hover:text-red-700 btn-hapus" tabindex="-1">

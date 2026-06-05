@@ -6,7 +6,7 @@
     <?php $this->load->view('layouts/navbar'); ?>
     
     <div class="flex-1 overflow-y-auto p-8">
-        <div class="max-w-7xl mx-auto">
+        <div class="max-w-[1600px] mx-auto w-full">
             <!-- KONTEN DINAMIS DIMUAT DI SINI -->
             <?php $this->load->view($view_name, $view_data ?? []); ?>
         </div>

@@ -106,3 +106,18 @@ $route['layanan'] = 'layanan/index';
 $route['layanan/create'] = 'layanan/create';
 $route['layanan/edit/(:num)'] = 'layanan/edit/$1';
 $route['layanan/delete/(:num)'] = 'layanan/delete/$1';
+
+// ==========================================
+// PORTAL PASIEN MANDIRI
+// ==========================================
+$route['portal_pasien']                 = 'portal_pasien/index';
+$route['portal_pasien/buat_antrean']    = 'portal_pasien/buat_antrean';
+$route['portal_pasien/get_dokter/(:num)'] = 'portal_pasien/get_dokter/$1';
+$route['portal_pasien/rekam_medis']     = 'portal_pasien/rekam_medis';
+$route['portal_pasien/billing']         = 'portal_pasien/billing';
+$route['portal_pasien/invoice/(:num)']  = 'portal_pasien/invoice/$1';
+$route['portal_pasien/antrean_saat_ini'] = 'portal_pasien/antrean_saat_ini';
+
+
+$route['live_board'] = 'live_board/index';
+$route['live_board/get_active_queues_ajax'] = 'live_board/get_active_queues_ajax';
