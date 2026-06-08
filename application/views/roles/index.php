@@ -75,33 +75,44 @@
                                 <?= htmlspecialchars($r->name) ?>
                             </span>
                         </td>
-                        
                         <?php if($can_edit || $can_delete): ?>
                         <td class="py-3 px-4 text-center">
-                            <div class="flex justify-center gap-2">
+                            <div class="flex justify-center items-center gap-1.5 flex-wrap">
                                 
                                 <!-- Tombol Kelola Akses (Milik hak edit_roles) -->
                                 <?php if($can_edit): ?>
                                     <?php if($r->id == 1): ?>
-                                        <span class="bg-green-100 text-green-700 px-3 py-1.5 rounded-md text-xs font-bold border border-green-200 cursor-not-allowed" title="Akses Penuh">Superadmin</span>
+                                        <span class="inline-flex items-center gap-1 bg-green-50 text-green-700 px-2.5 py-1.5 rounded-lg text-xs font-bold border border-green-200/60 cursor-not-allowed" title="Akses Penuh">
+                                            <i data-lucide="shield" class="w-3.5 h-3.5"></i>
+                                            <span>Superadmin</span>
+                                        </span>
                                     <?php else: ?>
-                                        <a href="<?= base_url('roles/permissions/'.$r->id) ?>" class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-3 py-1.5 rounded-md transition-colors text-xs font-semibold flex items-center gap-1">
-                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                                            Kelola Akses
+                                        <a href="<?= base_url('roles/permissions/'.$r->id) ?>" class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 hover:bg-blue-100 px-2.5 py-1.5 rounded-lg border border-blue-200/60 transition-all duration-200 text-xs font-bold hover:shadow-sm hover:-translate-y-0.5" title="Kelola Hak Akses">
+                                            <i data-lucide="key" class="w-3.5 h-3.5"></i>
+                                            <span>Kelola Akses</span>
                                         </a>
                                     <?php endif; ?>
                                 <?php endif; ?>
 
                                 <!-- Tombol Edit & Hapus (Sistem Role 1,2,3 dilindungi) -->
                                 <?php if(in_array($r->id, [1, 2, 3])): ?>
-                                    <span class="bg-gray-100 text-gray-400 px-3 py-1.5 rounded-md text-xs font-semibold cursor-not-allowed border border-gray-200" title="Role Sistem dilindungi">Sistem</span>
+                                    <span class="inline-flex items-center gap-1 bg-gray-50 text-gray-400 px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs font-bold cursor-not-allowed" title="Role Sistem dilindungi">
+                                        <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+                                        <span>Sistem</span>
+                                    </span>
                                 <?php else: ?>
                                     <?php if($can_edit): ?>
-                                        <a href="<?= base_url('roles/edit/'.$r->id) ?>" class="bg-amber-100 text-amber-700 hover:bg-amber-200 px-3 py-1.5 rounded-md transition-colors text-xs font-semibold">Edit</a>
+                                        <a href="<?= base_url('roles/edit/'.$r->id) ?>" class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 hover:bg-amber-100 px-2.5 py-1.5 rounded-lg border border-amber-200/60 transition-all duration-200 text-xs font-bold hover:shadow-sm hover:-translate-y-0.5" title="Edit Role">
+                                            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                                            <span>Edit</span>
+                                        </a>
                                     <?php endif; ?>
                                     
                                     <?php if($can_delete): ?>
-                                        <a href="<?= base_url('roles/delete/'.$r->id) ?>" class="btn-delete bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1.5 rounded-md transition-colors text-xs font-semibold">Hapus</a>
+                                        <a href="<?= base_url('roles/delete/'.$r->id) ?>" class="btn-delete inline-flex items-center gap-1 bg-red-50 text-red-700 hover:bg-red-100 px-2.5 py-1.5 rounded-lg border border-red-200/60 transition-all duration-200 text-xs font-bold hover:shadow-sm hover:-translate-y-0.5" title="Hapus Role">
+                                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                            <span>Hapus</span>
+                                        </a>
                                     <?php endif; ?>
                                 <?php endif; ?>
                                 

@@ -71,6 +71,10 @@ $route['obat/delete/(:num)'] = 'obat/delete/$1';
 // TRANSAKSI (RESEP)
 // ==========================================
 
+$route['penerimaan'] = 'penerimaan/index';
+$route['penerimaan/create'] = 'penerimaan/create';
+$route['penerimaan/show/(:num)'] = 'penerimaan/show/$1';
+
 $route['rekam_medis']               = 'rekam_medis/index';
 $route['rekam_medis/create']        = 'rekam_medis/create';
 $route['rekam_medis/show/(:num)']   = 'rekam_medis/show/$1';
@@ -124,3 +128,11 @@ $route['portal_pasien/status_antrean_ajax'] = 'portal_pasien/status_antrean_ajax
 
 $route['live_board'] = 'live_board/index';
 $route['live_board/get_active_queues_ajax'] = 'live_board/get_active_queues_ajax';
+
+// ==========================================
+// RUTE CRUD SUPPLIER FARMASI
+// ==========================================
+$route['supplier']                  = 'supplier/index';
+$route['supplier/create']           = 'supplier/create';
+$route['supplier/edit/(:num)']      = 'supplier/edit/$1';
+$route['supplier/delete/(:num)']    = 'supplier/delete/$1';

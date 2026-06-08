@@ -163,6 +163,17 @@
                 </div>
                 <hr class="border-t border-primary-hover/30 my-2 sidebar-divider hidden"/>
 
+                <?php if (in_array('view_penerimaan', $permissions)): ?>
+                <a href="<?= base_url('penerimaan') ?>" title="Penerimaan Obat"
+                class="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors <?= ($this->uri->segment(1) == 'penerimaan') ? 'bg-primary border-l-4 border-accent' : 'hover:bg-primary-hover' ?>">
+                    <!-- Icon Truck / Delivery -->
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                    </svg>
+                    <span class="sidebar-text font-medium text-sm">Penerimaan Obat</span>
+                </a>
+                <?php endif; ?>
+
                 <?php if (in_array('view_resep', $permissions)): ?>
                 <a href="<?= base_url('resep') ?>" title="Resep & Peresepan"
                    class="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors <?= ($this->uri->segment(1) == 'resep') ? 'bg-primary border-l-4 border-accent' : 'hover:bg-primary-hover' ?>">
@@ -228,6 +239,18 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
                     </svg>
                     <span class="sidebar-text font-medium text-sm">Tarif & Layanan Poli</span>
+                </a>
+                <?php endif; ?>
+
+                <!-- DI DALAM SIDEBAR.PHP (Grup Master Data) -->
+                <?php if (in_array('view_supplier', $permissions)): ?>
+                <a href="<?= base_url('supplier') ?>" title="Data Supplier"
+                class="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors <?= ($this->uri->segment(1) == 'supplier') ? 'bg-primary border-l-4 border-accent' : 'hover:bg-primary-hover' ?>">
+                    <!-- Icon Supplier (Users/Truck Group) -->
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                    <span class="sidebar-text font-medium text-sm">Data Supplier</span>
                 </a>
                 <?php endif; ?>
             <?php endif; ?>

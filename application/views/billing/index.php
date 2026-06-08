@@ -80,16 +80,25 @@
                             <?php endif; ?>
                         </td>
                         <td class="py-3 px-4 text-center">
-                            <div class="flex justify-center gap-2">
+                            <div class="flex justify-center items-center gap-1.5">
                                 <?php if($b->status == 'Belum Lunas'): ?>
                                     <?php if($can_manage): ?>
-                                        <a href="<?= base_url('billing/pay/'.$b->id_billing) ?>" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-md transition-colors text-xs font-bold shadow-sm">Bayar</a>
+                                        <a href="<?= base_url('billing/pay/'.$b->id_billing) ?>" class="inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg border border-green-700/60 transition-all duration-200 text-xs font-bold hover:shadow-sm hover:-translate-y-0.5" title="Proses Pembayaran">
+                                            <i data-lucide="credit-card" class="w-3.5 h-3.5"></i>
+                                            <span>Bayar</span>
+                                        </a>
                                     <?php else: ?>
-                                        <span class="text-gray-400 text-xs">Menunggu Kasir</span>
+                                        <span class="inline-flex items-center gap-1 bg-gray-50 text-gray-400 px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs font-bold cursor-not-allowed" title="Menunggu Kasir">
+                                            <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                                            <span>Menunggu</span>
+                                        </span>
                                     <?php endif; ?>
                                 <?php else: ?>
                                     <?php if($can_print): ?>
-                                        <a href="<?= base_url('billing/invoice/'.$b->id_billing) ?>" class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-3 py-1.5 rounded-md transition-colors text-xs font-bold">Kuitansi</a>
+                                        <a href="<?= base_url('billing/invoice/'.$b->id_billing) ?>" class="inline-flex items-center gap-1 bg-purple-50 text-purple-700 hover:bg-purple-100 px-2.5 py-1.5 rounded-lg border border-purple-200/60 transition-all duration-200 text-xs font-bold hover:shadow-sm hover:-translate-y-0.5" title="Cetak Kuitansi / Bukti Bayar">
+                                            <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                                            <span>Kuitansi</span>
+                                        </a>
                                     <?php endif; ?>
                                 <?php endif; ?>
                             </div>

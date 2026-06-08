@@ -94,16 +94,21 @@
                                 <span class="bg-pink-100 text-pink-700 px-2 py-1 rounded-md text-xs font-semibold">Perempuan</span>
                             <?php endif; ?>
                         </td>
-                        
                         <?php if($can_edit || $can_delete): ?>
                         <td class="py-3 px-4 text-center">
-                            <div class="flex justify-center gap-2">
+                            <div class="flex justify-center items-center gap-1.5">
                                 <?php if($can_edit): ?>
-                                <a href="<?= base_url('pasien/edit/'.$p->id_pasien) ?>" class="bg-amber-100 text-amber-700 hover:bg-amber-200 px-3 py-1.5 rounded-md transition-colors text-xs font-semibold">Edit</a>
+                                <a href="<?= base_url('pasien/edit/'.$p->id_pasien) ?>" class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 hover:bg-amber-100 px-2.5 py-1.5 rounded-lg border border-amber-200/60 transition-all duration-200 text-xs font-bold hover:shadow-sm hover:-translate-y-0.5" title="Edit Pasien">
+                                    <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                                    <span>Edit</span>
+                                </a>
                                 <?php endif; ?>
                                 
                                 <?php if($can_delete): ?>
-                                <a href="<?= base_url('pasien/delete/'.$p->id_pasien) ?>" class="btn-delete bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1.5 rounded-md transition-colors text-xs font-semibold">Hapus</a>
+                                <a href="<?= base_url('pasien/delete/'.$p->id_pasien) ?>" class="btn-delete inline-flex items-center gap-1 bg-red-50 text-red-700 hover:bg-red-100 px-2.5 py-1.5 rounded-lg border border-red-200/60 transition-all duration-200 text-xs font-bold hover:shadow-sm hover:-translate-y-0.5" title="Hapus Pasien">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                    <span>Hapus</span>
+                                </a>
                                 <?php endif; ?>
                             </div>
                         </td>

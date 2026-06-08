@@ -5,31 +5,24 @@ class Obat extends MY_Controller {
 
     public function __construct() {
         parent::__construct();
-        // Syarat dasar: harus punya permission view_obat
         $this->require_permission('view_obat');
-        
         $this->load->model('Obat_model');
-        $this->load->library('form_validation');
+        $this->load->model('Supplier_model'); // Load Supplier_model
         $this->load->library('pagination');
     }
 
     public function index() {
-        $data['title'] = 'Manajemen Data Obat';
+        $data['title'] = 'Manajemen Obat & Alkes';
 
-        // Tangkap parameter Search & Filter dari URL
-        $keyword  = $this->input->get('keyword', TRUE);
-        $kategori = $this->input->get('kategori', TRUE);
+        $keyword = $this->input->get('keyword', TRUE);
 
-        // Konfigurasi Pagination CI3
         $config['base_url'] = base_url('obat/index');
-        $config['total_rows'] = $this->Obat_model->count_all_results($keyword, $kategori);
+        $config['total_rows'] = $this->Obat_model->count_all_results($keyword);
         $config['per_page'] = 10;
-        
         $config['page_query_string'] = TRUE;
-        $config['reuse_query_string'] = TRUE; 
-        
-        // Style Tailwind CSS untuk Pagination
-        $config['full_tag_open']    = '<nav class="flex items-center justify-center space-x-1 mt-4"><ul class="inline-flex items-center -space-x-px">';
+        $config['reuse_query_string'] = TRUE;
+
+        $config['full_tag_open']    = '<nav class="flex items-center justify-center mt-4"><ul class="inline-flex items-center -space-x-px">';
         $config['full_tag_close']   = '</ul></nav>';
         $config['first_tag_open']   = '<li>'; $config['first_tag_close']  = '</li>';
         $config['last_tag_open']    = '<li>'; $config['last_tag_close']   = '</li>';
@@ -41,98 +34,94 @@ class Obat extends MY_Controller {
         $config['attributes']       = ['class' => 'px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700'];
 
         $this->pagination->initialize($config);
-
         $start = $this->input->get('per_page') ? $this->input->get('per_page') : 0;
 
-        // Ambil data
-        $data['obat']       = $this->Obat_model->get_paginated($config['per_page'], $start, $keyword, $kategori);
+        $data['obat'] = $this->Obat_model->get_paginated($config['per_page'], $start, $keyword);
         $data['pagination'] = $this->pagination->create_links();
         $data['total_rows'] = $config['total_rows'];
-        $data['start']      = $start;
-        
-        $data['keyword']    = $keyword;
-        $data['kategori']   = $kategori;
+        $data['start'] = $start;
+        $data['keyword'] = $keyword;
 
-        $template_data = [
-            'view_name' => 'obat/index',
-            'view_data' => $data
-        ];
-        $this->load->view('layouts/template', $template_data);
+        $this->load->view('layouts/template', ['view_name' => 'obat/index', 'view_data' => $data]);
     }
 
     public function create() {
-        // Cek secara spesifik: apakah ia punya izin membuat data obat?
         $this->require_permission('create_obat');
 
-        if ($this->input->post()) {
-            $this->form_validation->set_rules('kode_obat', 'Kode Obat', 'required|is_unique[obat.kode_obat]');
-            $this->form_validation->set_rules('nama_obat', 'Nama Obat', 'required');
-            $this->form_validation->set_rules('harga', 'Harga', 'required|numeric');
+        $this->load->library('form_validation');
+        $this->form_validation->set_rules('kode_obat', 'Kode Obat', 'required|is_unique[obat.kode_obat]');
+        $this->form_validation->set_rules('nama_obat', 'Nama Obat', 'required');
+        $this->form_validation->set_rules('kategori', 'Kategori', 'required');
+        $this->form_validation->set_rules('satuan', 'Satuan', 'required');
+        $this->form_validation->set_rules('stok', 'Stok', 'required|numeric');
+        $this->form_validation->set_rules('harga', 'Harga Jual', 'required|numeric');
 
-            if ($this->form_validation->run() == FALSE) {
-                $this->session->set_flashdata('error', validation_errors(' ', ' '));
-            } else {
-                $data = [
-                    'kode_obat' => strtoupper($this->input->post('kode_obat', TRUE)), // Otomatis jadikan huruf besar
-                    'nama_obat' => $this->input->post('nama_obat', TRUE),
-                    'kategori'  => $this->input->post('kategori', TRUE),
-                    'stok'      => (int) $this->input->post('stok', TRUE),
-                    'harga'     => (float) $this->input->post('harga', TRUE)
-                ];
-                
-                $this->Obat_model->insert($data);
-                $this->session->set_flashdata('success', 'Data obat berhasil ditambahkan.');
-                redirect('obat');
-            }
+        if ($this->form_validation->run() == TRUE) {
+            $data = [
+                'kode_obat'   => strtoupper($this->input->post('kode_obat', TRUE)),
+                'nama_obat'   => $this->input->post('nama_obat', TRUE),
+                'kategori'    => $this->input->post('kategori', TRUE),
+                'satuan'      => $this->input->post('satuan', TRUE),
+                'id_supplier' => $this->input->post('id_supplier', TRUE) ?: NULL, // Ambil ID Supplier (Opsional)
+                'stok'        => (float) $this->input->post('stok', TRUE),
+                'harga'       => (float) $this->input->post('harga', TRUE)
+            ];
+
+            $this->Obat_model->insert($data);
+            $this->session->set_flashdata('success', 'Data obat baru berhasil ditambahkan.');
+            redirect('obat');
         }
 
-        $data['title'] = 'Tambah Obat Baru';
-        $template_data = [
-            'view_name' => 'obat/create',
-            'view_data' => $data
-        ];
-        $this->load->view('layouts/template', $template_data);
+        $data['title'] = 'Tambah Obat / Alkes';
+        // Memuat rekomendasi satuan obat unik & supplier aktif
+        $data['distinct_satuan'] = $this->Obat_model->get_distinct_satuan();
+        $data['suppliers']       = $this->Supplier_model->get_all();
+
+        $this->load->view('layouts/template', ['view_name' => 'obat/create', 'view_data' => $data]);
     }
 
     public function edit($id) {
-        // Cek secara spesifik: apakah ia punya izin mengedit data obat?
         $this->require_permission('edit_obat');
 
-        if ($this->input->post()) {
+        $obat = $this->Obat_model->get_by_id($id);
+        if (!$obat) show_404();
+
+        $this->load->library('form_validation');
+        $this->form_validation->set_rules('nama_obat', 'Nama Obat', 'required');
+        $this->form_validation->set_rules('kategori', 'Kategori', 'required');
+        $this->form_validation->set_rules('satuan', 'Satuan', 'required');
+        $this->form_validation->set_rules('stok', 'Stok', 'required|numeric');
+        $this->form_validation->set_rules('harga', 'Harga Jual', 'required|numeric');
+
+        if ($this->form_validation->run() == TRUE) {
             $data = [
-                'nama_obat' => $this->input->post('nama_obat', TRUE),
-                'kategori'  => $this->input->post('kategori', TRUE),
-                'stok'      => (int) $this->input->post('stok', TRUE),
-                'harga'     => (float) $this->input->post('harga', TRUE)
+                'nama_obat'   => $this->input->post('nama_obat', TRUE),
+                'kategori'    => $this->input->post('kategori', TRUE),
+                'satuan'      => $this->input->post('satuan', TRUE),
+                'id_supplier' => $this->input->post('id_supplier', TRUE) ?: NULL, // Ambil ID Supplier (Opsional)
+                'stok'        => (float) $this->input->post('stok', TRUE),
+                'harga'       => (float) $this->input->post('harga', TRUE)
             ];
-            
+
             $this->Obat_model->update($id, $data);
             $this->session->set_flashdata('success', 'Data obat berhasil diperbarui.');
             redirect('obat');
         }
 
         $data['title'] = 'Edit Data Obat';
-        $data['obat']  = $this->Obat_model->get_by_id($id);
-        
-        if (!$data['obat']) show_404();
+        $data['obat']  = $obat;
+        // Memuat rekomendasi satuan obat unik & supplier aktif
+        $data['distinct_satuan'] = $this->Obat_model->get_distinct_satuan();
+        $data['suppliers']       = $this->Supplier_model->get_all();
 
-        $template_data = [
-            'view_name' => 'obat/edit',
-            'view_data' => $data
-        ];
-        $this->load->view('layouts/template', $template_data);
+        $this->load->view('layouts/template', ['view_name' => 'obat/edit', 'view_data' => $data]);
     }
 
     public function delete($id) {
-        // Cek secara spesifik: apakah ia punya izin menghapus data obat?
         $this->require_permission('delete_obat');
-
-        if ($this->Obat_model->delete($id)) {
-            $this->session->set_flashdata('success', 'Data obat berhasil dihapus.');
-        } else {
-            // Error ini biasanya terjadi jika constraint foreign key database memblokir (obat sudah diresepkan)
-            $this->session->set_flashdata('error', 'Gagal menghapus data obat. Obat ini mungkin masih tercatat dalam riwayat resep pasien.');
-        }
+        
+        $this->Obat_model->delete($id);
+        $this->session->set_flashdata('success', 'Data obat berhasil dihapus dari sistem.');
         redirect('obat');
     }
 }

@@ -3,13 +3,61 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Obat_model extends CI_Model {
 
+    // Ambil data obat dengan paginasi, relasi supplier, dan filter pencarian
+    public function get_paginated($limit, $start, $keyword = null) {
+        $this->db->select('obat.*, supplier.nama_supplier');
+        $this->db->from('obat');
+        $this->db->join('supplier', 'supplier.id_supplier = obat.id_supplier', 'left');
+
+        if (!empty($keyword)) {
+            $this->db->group_start();
+            $this->db->like('obat.kode_obat', $keyword);
+            $this->db->or_like('obat.nama_obat', $keyword);
+            $this->db->or_like('obat.kategori', $keyword);
+            $this->db->or_like('supplier.nama_supplier', $keyword);
+            $this->db->group_end();
+        }
+
+        $this->db->order_by('obat.nama_obat', 'ASC');
+        $this->db->limit($limit, $start);
+        return $this->db->get()->result();
+    }
+
+    // Hitung jumlah baris data obat untuk saringan paginasi
+    public function count_all_results($keyword = null) {
+        $this->db->from('obat');
+        $this->db->join('supplier', 'supplier.id_supplier = obat.id_supplier', 'left');
+
+        if (!empty($keyword)) {
+            $this->db->group_start();
+            $this->db->like('obat.kode_obat', $keyword);
+            $this->db->or_like('obat.nama_obat', $keyword);
+            $this->db->or_like('supplier.nama_supplier', $keyword);
+            $this->db->group_end();
+        }
+
+        return $this->db->count_all_results();
+    }
+
     public function get_all() {
+        $this->db->order_by('nama_obat', 'ASC');
         return $this->db->get('obat')->result();
     }
 
     public function get_by_id($id) {
-        $this->db->where('id_obat', $id);
-        return $this->db->get('obat')->row();
+        return $this->db->get_where('obat', ['id_obat' => $id])->row();
+    }
+
+    // ====================================================================
+    // FITUR BARU: Mengambil histori daftar satuan obat unik (DISTINCT)
+    // ====================================================================
+    public function get_distinct_satuan() {
+        $this->db->select('DISTINCT(satuan) as satuan');
+        $this->db->from('obat');
+        $this->db->where('satuan IS NOT NULL');
+        $this->db->where("satuan != ''");
+        $this->db->order_by('satuan', 'ASC');
+        return $this->db->get()->result();
     }
 
     public function insert($data) {
@@ -17,61 +65,10 @@ class Obat_model extends CI_Model {
     }
 
     public function update($id, $data) {
-        $this->db->where('id_obat', $id);
-        return $this->db->update('obat', $data);
+        return $this->db->where('id_obat', $id)->update('obat', $data);
     }
 
     public function delete($id) {
-        $this->db->where('id_obat', $id);
-        return $this->db->delete('obat');
-    }
-
-        // Fungsi untuk mengambil data dengan Paginasi, Search, dan Filter
-    public function get_paginated($limit, $start, $keyword = null, $kategori = null) {
-        $this->db->select('*');
-        $this->db->from('obat');
-
-        // Jika ada pencarian (Search)
-        if (!empty($keyword)) {
-            $this->db->group_start();
-            $this->db->like('nama_obat', $keyword);
-            $this->db->or_like('kode_obat', $keyword);
-            $this->db->group_end();
-        }
-
-        // Jika ada filter (Kategori)
-        if (!empty($kategori)) {
-            $this->db->where('kategori', $kategori);
-        }
-
-        $this->db->order_by('nama_obat', 'ASC');
-        $this->db->limit($limit, $start);
-        
-        return $this->db->get()->result();
-    }
-
-    // Fungsi untuk menghitung total data (untuk konfigurasi pagination CI3)
-    public function count_all_results($keyword = null, $kategori = null) {
-        $this->db->from('obat');
-
-        if (!empty($keyword)) {
-            $this->db->group_start();
-            $this->db->like('nama_obat', $keyword);
-            $this->db->or_like('kode_obat', $keyword);
-            $this->db->group_end();
-        }
-
-        if (!empty($kategori)) {
-            $this->db->where('kategori', $kategori);
-        }
-
-        return $this->db->count_all_results();
-    }
-
-    // Kurangi stok setelah diresepkan
-    public function kurangi_stok($id_obat, $jumlah) {
-        $this->db->set('stok', 'stok - ' . (int)$jumlah, FALSE);
-        $this->db->where('id_obat', $id_obat);
-        return $this->db->update('obat');
+        return $this->db->where('id_obat', $id)->delete('obat');
     }
 }
